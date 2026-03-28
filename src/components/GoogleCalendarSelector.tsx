@@ -290,7 +290,7 @@ export function GoogleCalendarSelector({
               className="px-4 py-1 rounded-full text-[18px] font-semibold"
               style={{
                 backgroundColor: 'var(--primary)',
-                color: 'var(--text-inverse)',
+                color: 'var(--inverse-color)',
               }}
               type="button"
             >

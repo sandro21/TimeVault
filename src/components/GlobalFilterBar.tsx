@@ -208,7 +208,7 @@ export function GlobalFilterBar() {
         <div className="flex flex-col items-center justify-center gap-1 pointer-events-auto">
           {/* Combined capsule with filter options and navigation */}
           <div 
-            className="px-1 py-1 flex flex-row items-center gap-1 bg-[color:var(--bg-white)] rounded-full"
+            className="px-1 py-1 flex flex-row items-center gap-1 bg-[color:var(--inverse-color)] rounded-full"
             style={{
               boxShadow: 'var(--card-shadow)',
             }}
