@@ -21,10 +21,10 @@ export function ActivityFilterBar({
       {/* Left: Icons */}
       <div className="flex items-center gap-3">
         <div className="card-soft w-12 h-12 flex items-center justify-center cursor-pointer">
-          <Upload size={20} className="text-black" />
+          <Upload size={20} className="text-[color:var(--text-primary)]" />
         </div>
         <div className="card-soft w-12 h-12 flex items-center justify-center cursor-pointer">
-          <Filter size={20} className="text-black" />
+          <Filter size={20} className="text-[color:var(--text-primary)]" />
         </div>
       </div>
 
@@ -54,7 +54,7 @@ export function ActivityFilterBar({
             >
               ←
             </button>
-            <span className="text-body-24 text-black">{currentYear}</span>
+            <span className="text-body-24 text-[color:var(--text-primary)]">{currentYear}</span>
             <button
               onClick={() => onYearChange(currentYear + 1)}
               className="card-soft px-3 py-1 text-body-24 cursor-pointer"
@@ -67,8 +67,8 @@ export function ActivityFilterBar({
 
       {/* Right: Search Activity */}
       <div className="card-soft px-4 py-2 flex items-center gap-2 cursor-pointer">
-        <Search size={18} className="text-black" />
-        <span className="text-body-24 text-black">Search an activity</span>
+        <Search size={18} className="text-[color:var(--text-primary)]" />
+        <span className="text-body-24 text-[color:var(--text-primary)]">Search an activity</span>
       </div>
     </div>
   );

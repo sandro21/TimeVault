@@ -13,6 +13,7 @@ import {
   Cell,
 } from "recharts";
 import { formatAsCompactHoursMinutes } from "@/lib/calculations/stats";
+import { getPrimaryGradientColor } from "@/lib/colors";
 
 interface ActivityPeakMonthChartProps {
   events: CalendarEvent[];
@@ -27,7 +28,7 @@ const CustomLabel = ({ x, y, width, value }: any) => {
     <text
       x={x + width / 2}
       y={y - 5}
-      fill="#DB1E18"
+      fill="var(--primary)"
       textAnchor="middle"
       fontSize={10}
       fontWeight={600}
@@ -53,15 +54,11 @@ export function ActivityPeakMonthChart({ events }: ActivityPeakMonthChartProps) 
 
     // Convert to chart data format with color based on value
     return monthTotals.map((minutes, index) => {
-      // Calculate color intensity (0 to 1) - more pronounced variation
+      // Calculate color intensity (0 to 1) - higher values = darker
       const intensity = maxValue > 0 ? minutes / maxValue : 0;
       
-      // Create more pronounced color gradient: bright pink/light red to darker red
-      const red = Math.floor(255 - (intensity * 60)); // 255 to 195
-      const green = Math.floor(150 - (intensity * 120)); // 150 to 30
-      const blue = Math.floor(150 - (intensity * 126)); // 150 to 24
-      
-      const color = `rgb(${red}, ${green}, ${blue})`;
+      // Use primary-based gradient (intensity 0 = lightest, 1 = darkest)
+      const color = getPrimaryGradientColor(intensity);
       
       return {
         month: MONTH_NAMES[index],
@@ -87,14 +84,14 @@ export function ActivityPeakMonthChart({ events }: ActivityPeakMonthChartProps) 
           data={chartData}
           margin={{ top: 13, right: 0, left: 0, bottom: -10 }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
           <XAxis
             dataKey="month"
-            stroke="#3B3C40"
+            stroke="var(--chart-axis)"
             style={{ fontSize: '10px' }}
           />
           <YAxis
-            stroke="#3B3C40"
+            stroke="var(--chart-axis)"
             style={{ fontSize: '10px' }}
             tickFormatter={(value) => {
               if (value >= 60) {

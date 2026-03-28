@@ -31,8 +31,29 @@ export function EventsProvider({
       // Load removed event IDs
       const removedEventIds = new Set(JSON.parse(localStorage.getItem('removedEventIds') || '[]'));
       
+      // Load Google Calendar events stored separately
+      const googleEvents = JSON.parse(localStorage.getItem('googleCalendarEvents') || '{}');
+      
       for (const calendar of storedCalendars) {
-        const events = parseIcsToEventsBrowser(calendar.icsText, calendar.id);
+        let events: CalendarEvent[] = [];
+        
+        // Check if this is a Google calendar
+        if (calendar.source === 'google' && calendar.googleCalendarId) {
+          // Load events from googleEvents storage
+          const calendarEvents = googleEvents[calendar.id] || [];
+          // Convert date strings back to Date objects
+          events = calendarEvents.map((e: any) => ({
+            ...e,
+            start: new Date(e.start),
+            end: new Date(e.end),
+          }));
+        } else if (calendar.icsText) {
+          // Parse ICS file
+          events = parseIcsToEventsBrowser(calendar.icsText, calendar.id);
+        } else {
+          console.warn(`Calendar ${calendar.id} has no icsText or Google events`);
+          continue;
+        }
         
         // Apply title mappings and filter removed events
         const processedEvents = events

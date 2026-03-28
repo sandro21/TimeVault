@@ -3,6 +3,7 @@
 import { CalendarEvent } from "@/lib/calculations/stats";
 import { useMemo } from "react";
 import { computeTopActivities } from "@/lib/calculations/stats";
+import { getChartColorValue, CHART_COLORS } from "@/lib/colors";
 
 interface EventTimelineChartProps {
   events: CalendarEvent[];
@@ -26,20 +27,23 @@ interface MonthMarker {
   label: string;
 }
 
-const COLORS = [
-  "#DB1E18", // Red
-  "#3B82F6", // Blue
-  "#10B981", // Green
-  "#A855F7", // Purple
-  "#F97316", // Orange
-  "#EC4899", // Pink
-  "#14B8A6", // Teal
-  "#F59E0B", // Amber
-  "#8B5CF6", // Violet
-  "#EF4444", // Light Red
-];
-
 export function EventTimelineChart({ events }: EventTimelineChartProps) {
+  // Get chart colors from CSS variables
+  const colors = useMemo(() => {
+    return CHART_COLORS.slice(0, 10).map((_, index) => {
+      const value = getChartColorValue(index);
+      // Fallback to actual CSS values if not available (SSR)
+      if (!value) {
+        const fallbacks = [
+          "#a43c38", "#3B82F6", "#10B981", "#A855F7", "#F97316",
+          "#EC4899", "#14B8A6", "#F59E0B", "#8B5CF6", "#EF4444"
+        ];
+        return fallbacks[index] || fallbacks[0];
+      }
+      return value;
+    });
+  }, []);
+
   const { timelineData, dateRange, monthMarkers } = useMemo(() => {
     if (events.length === 0) {
       return { timelineData: [], dateRange: null, monthMarkers: [] };
@@ -188,7 +192,7 @@ export function EventTimelineChart({ events }: EventTimelineChartProps) {
 
       bars.push({
         activityName: activity.name,
-        color: COLORS[index % COLORS.length],
+        color: colors[index % colors.length],
         segments,
       });
     });
@@ -198,11 +202,11 @@ export function EventTimelineChart({ events }: EventTimelineChartProps) {
       dateRange: { min: minDate, max: maxDate, total: totalRange },
       monthMarkers: markers,
     };
-  }, [events]);
+  }, [events, colors]);
 
   if (timelineData.length === 0 || !dateRange) {
     return (
-      <div className="flex items-center justify-center h-full text-[color:var(--gray)]">
+      <div className="flex items-center justify-center h-full text-[color:var(--text-secondary)]">
         No data available
       </div>
     );
@@ -223,7 +227,7 @@ export function EventTimelineChart({ events }: EventTimelineChartProps) {
   return (
     <div className="w-full h-full flex flex-col">
       {/* X-axis month labels - positioned to match the timeline area */}
-      <div className="relative h-10 mb-4 border-b-2 border-gray-300 flex">
+      <div className="relative h-10 mb-4 border-b-2 border-[color:var(--timeline-axis-border)] flex">
         {/* Spacer to match activity label width */}
         <div style={{ width: `${activityLabelWidth}px`, flexShrink: 0 }} />
         {/* Labels container matching timeline width */}
@@ -259,7 +263,7 @@ export function EventTimelineChart({ events }: EventTimelineChartProps) {
             >
               {/* Activity label */}
               <div 
-                className="w-40 pr-4 text-sm font-semibold text-black truncate flex-shrink-0 bg-[color:var(--card-bg)] z-10" 
+                className="w-40 pr-4 text-sm font-semibold text-[color:var(--text-primary)] truncate flex-shrink-0 bg-[color:var(--card-bg)] z-10" 
                 title={bar.activityName}
                 style={{ height: `${barHeight}px`, lineHeight: `${barHeight}px` }}
               >
@@ -275,7 +279,7 @@ export function EventTimelineChart({ events }: EventTimelineChartProps) {
                 {monthMarkers.map((marker, index) => (
                   <div
                     key={`line-${barIndex}-${index}`}
-                    className="absolute border-l-2 border-gray-300 opacity-50 pointer-events-none"
+                    className="absolute border-l-2 border-[color:var(--timeline-axis-border)] opacity-50 pointer-events-none"
                     style={{ 
                       left: `${marker.position}%`, 
                       top: 0,

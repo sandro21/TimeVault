@@ -30,7 +30,7 @@ export function parseIcsToEventsBrowser(icsText: string, calendarId: string): Ca
     if (!start) continue;
     
     // Extract DTEND or calculate from DURATION
-    let end: Date;
+    let end: Date | null;
     const dtendMatch = block.match(/DTEND[^:]*:([^\r\n]+)/i);
     if (dtendMatch) {
       const dtendValue = dtendMatch[1].trim();

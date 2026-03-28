@@ -313,7 +313,7 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
       <text
         x={x}
         y={y + 15}
-        fill="#3B3C40"
+        fill="var(--chart-axis)"
         fontSize={12}
         textAnchor="middle"
       >
@@ -353,10 +353,10 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
             minWidth: '160px',
           }}
         >
-          <p className="text-sm font-semibold text-black">
+          <p className="text-sm font-semibold text-[color:var(--text-primary)]">
             {getTooltipLabel()}
           </p>
-          <p className="text-sm text-[color:var(--red-1)]">
+          <p className="text-sm text-[color:var(--primary)]">
             {formatAsCompactHoursMinutes(data.minutes)}
           </p>
         </div>
@@ -380,7 +380,7 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
         <h3 className="text-card-title">{title}</h3>
         <div className="relative">
           <div 
-            className="bg-white px-3 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer text-[18px] text-black"
+            className="bg-white px-3 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer text-[18px] text-[color:var(--text-primary)]"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           >
             <span>Interval: {selectedInterval}</span>
@@ -401,8 +401,8 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
                       setSelectedInterval(interval);
                       setIsDropdownOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-1.5 text-[18px] text-black hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg ${
-                      selectedInterval === interval ? 'bg-[rgba(219,30,24,0.1)]' : ''
+                    className={`w-full text-left px-3 py-1.5 text-[18px] text-[color:var(--text-primary)] hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg ${
+                      selectedInterval === interval ? 'bg-[color:var(--primary-10)]' : ''
                     }`}
                   >
                     {interval}
@@ -416,16 +416,16 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
 
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={chartData} margin={{ top: 10, right:10, left: 0, bottom: 0 }} style={{ position: 'relative' }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
           <XAxis
             dataKey="date"
             tick={<CustomTick />}
-            stroke="#3B3C40"
+            stroke="var(--chart-axis)"
             style={{ fontSize: '12px' }}
             interval={0}
           />
           <YAxis
-            stroke="#3B3C40"
+            stroke="var(--chart-axis)"
             style={{ fontSize: '12px' }}
             tickFormatter={(value) => formatAsCompactHoursMinutes(value)}
             width={60}
@@ -440,12 +440,12 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
           <Area
             type="monotone"
             dataKey="minutes"
-            stroke="var(--red-1)"
-            fill="var(--red-1)"
+            stroke="var(--primary)"
+            fill="var(--primary)"
             fillOpacity={0.3}
             strokeWidth={2}
             dot={false}
-            activeDot={{ r: 5, fill: "var(--red-1)" }}
+            activeDot={{ r: 5, fill: "var(--primary)" }}
           />
         </AreaChart>
       </ResponsiveContainer>

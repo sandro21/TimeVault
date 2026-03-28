@@ -17,7 +17,11 @@ import { useEvents } from "@/contexts/EventsContext";
 
 type ProcessingStep = "suggestions" | "quality" | "preview";
 
-export function ProcessCalendarClient() {
+interface ProcessCalendarClientProps {
+  events: CalendarEvent[];
+}
+
+export function ProcessCalendarClient({ events: contextEvents }: ProcessCalendarClientProps) {
   const router = useRouter();
   const { refreshEvents } = useEvents();
   const [originalEvents, setOriginalEvents] = useState<CalendarEvent[]>([]);
@@ -29,29 +33,35 @@ export function ProcessCalendarClient() {
   const [removedEventIds, setRemovedEventIds] = useState<Set<string>>(new Set());
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Load events from sessionStorage on mount
+  // Load events from sessionStorage (new uploads) or from context (re-cleaning)
   useEffect(() => {
     const processingData = sessionStorage.getItem("processingCalendars");
-    if (!processingData) {
+    
+    if (processingData) {
+      // New upload flow
+      try {
+        const data = JSON.parse(processingData);
+        // Convert date strings back to Date objects
+        const events: CalendarEvent[] = data.events.map((e: any) => ({
+          ...e,
+          start: new Date(e.start),
+          end: new Date(e.end),
+        }));
+        setOriginalEvents(events);
+        setProcessedEvents(events);
+      } catch (error) {
+        console.error("Error loading processing data:", error);
+        router.push("/upload");
+      }
+    } else if (contextEvents.length > 0) {
+      // Re-cleaning existing data
+      setOriginalEvents(contextEvents);
+      setProcessedEvents(contextEvents);
+    } else {
+      // No data to process
       router.push("/upload");
-      return;
     }
-
-    try {
-      const data = JSON.parse(processingData);
-      // Convert date strings back to Date objects
-      const events: CalendarEvent[] = data.events.map((e: any) => ({
-        ...e,
-        start: new Date(e.start),
-        end: new Date(e.end),
-      }));
-      setOriginalEvents(events);
-      setProcessedEvents(events);
-    } catch (error) {
-      console.error("Error loading processing data:", error);
-      router.push("/upload");
-    }
-  }, [router]);
+  }, [router, contextEvents]);
 
   // Generate merge suggestions when events are loaded
   useEffect(() => {
@@ -132,6 +142,19 @@ export function ProcessCalendarClient() {
       storedCalendars.push(...newCalendars);
       localStorage.setItem('uploadedCalendars', JSON.stringify(storedCalendars));
 
+      // For Google calendars, store events separately
+      const googleEvents = JSON.parse(localStorage.getItem('googleCalendarEvents') || '{}');
+      newCalendars.forEach((calendar: any) => {
+        if (calendar.source === 'google') {
+          // Store events for this Google calendar
+          const calendarEvents = originalEvents.filter(
+            (event) => event.calendarId === calendar.id
+          );
+          googleEvents[calendar.id] = calendarEvents;
+        }
+      });
+      localStorage.setItem('googleCalendarEvents', JSON.stringify(googleEvents));
+
       // Clear session storage
       sessionStorage.removeItem('processingCalendars');
       sessionStorage.removeItem('uploadErrors');
@@ -165,6 +188,19 @@ export function ProcessCalendarClient() {
       const storedCalendars = JSON.parse(localStorage.getItem('uploadedCalendars') || '[]');
       storedCalendars.push(...newCalendars);
       localStorage.setItem('uploadedCalendars', JSON.stringify(storedCalendars));
+
+      // For Google calendars, store processed events separately
+      const googleEvents = JSON.parse(localStorage.getItem('googleCalendarEvents') || '{}');
+      newCalendars.forEach((calendar: any) => {
+        if (calendar.source === 'google') {
+          // Store PROCESSED events for this Google calendar
+          const calendarEvents = processedEvents.filter(
+            (event) => event.calendarId === calendar.id
+          );
+          googleEvents[calendar.id] = calendarEvents;
+        }
+      });
+      localStorage.setItem('googleCalendarEvents', JSON.stringify(googleEvents));
 
       // Build title mappings (original -> processed)
       const titleMappings: Record<string, string> = {};
@@ -219,11 +255,44 @@ export function ProcessCalendarClient() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Header */}
-      <div className="text-center space-y-2">
-        <h1 className="text-4xl font-bold text-black">Clean Your Calendar</h1>
+      <div className="text-center space-y-4">
+        <h1 className="text-4xl font-bold text-[color:var(--text-primary)]">Clean Your Calendar</h1>
         <p className="text-body-24 text-[color:var(--gray)]">
           We found {originalEvents.length} events. Review and clean up your data before viewing stats.
         </p>
+        
+        {/* Before/After Stats */}
+        <div className="flex items-center justify-center gap-4 pt-2">
+          <div className="bg-white border-2 border-gray-300 rounded-lg px-6 py-3">
+            <p className="text-sm text-[color:var(--gray)] mb-1">Before</p>
+            <div className="flex gap-4">
+              <div>
+                <p className="text-xs text-[color:var(--gray)]">Events</p>
+                <p className="text-xl font-bold text-[color:var(--text-primary)]">{originalEvents.length}</p>
+              </div>
+              <div>
+                <p className="text-xs text-[color:var(--gray)]">Activities</p>
+                <p className="text-xl font-bold text-[color:var(--text-primary)]">{originalStats?.uniqueActivities || 0}</p>
+              </div>
+            </div>
+          </div>
+          
+          <span className="text-2xl text-[color:var(--gray)]">→</span>
+          
+          <div className="bg-white border-2 border-[color:var(--primary)] rounded-lg px-6 py-3">
+            <p className="text-sm text-[color:var(--primary)] mb-1">After</p>
+            <div className="flex gap-4">
+              <div>
+                <p className="text-xs text-[color:var(--gray)]">Events</p>
+                <p className="text-xl font-bold text-[color:var(--primary)]">{processedEvents.length}</p>
+              </div>
+              <div>
+                <p className="text-xs text-[color:var(--gray)]">Activities</p>
+                <p className="text-xl font-bold text-[color:var(--primary)]">{processedStats?.uniqueActivities || 0}</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Step Navigation */}
@@ -232,8 +301,8 @@ export function ProcessCalendarClient() {
           onClick={() => setCurrentStep("suggestions")}
           className={`px-6 py-2 rounded-full text-body-24 ${
             currentStep === "suggestions"
-              ? "bg-[color:var(--red-1)] text-white"
-              : "bg-gray-200 text-black"
+              ? "bg-[color:var(--primary)] text-white"
+              : "bg-gray-200 text-[color:var(--text-primary)]"
           }`}
         >
           Merge Activities
@@ -242,28 +311,18 @@ export function ProcessCalendarClient() {
           onClick={() => setCurrentStep("quality")}
           className={`px-6 py-2 rounded-full text-body-24 ${
             currentStep === "quality"
-              ? "bg-[color:var(--red-1)] text-white"
-              : "bg-gray-200 text-black"
+              ? "bg-[color:var(--primary)] text-white"
+              : "bg-gray-200 text-[color:var(--text-primary)]"
           }`}
         >
           Data Quality
         </button>
         <button
-          onClick={() => setCurrentStep("preview")}
-          className={`px-6 py-2 rounded-full text-body-24 ${
-            currentStep === "preview"
-              ? "bg-[color:var(--red-1)] text-white"
-              : "bg-gray-200 text-black"
-          }`}
-        >
-          Preview
-        </button>
-        <button
-          onClick={handleSkip}
+          onClick={appliedMerges.size > 0 || removedEventIds.size > 0 ? handleSaveAndContinue : handleSkip}
           disabled={isProcessing}
-          className="px-6 py-2 rounded-full text-body-24 bg-white text-black border-2 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-2 rounded-full text-body-24 bg-[color:var(--primary)] text-white disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Skip
+          {isProcessing ? "Processing..." : "Done"}
         </button>
       </div>
 
@@ -283,17 +342,6 @@ export function ProcessCalendarClient() {
             issues={dataQualityIssues}
             onRemove={handleRemoveIssue}
             onKeep={handleKeepIssue}
-          />
-        )}
-
-        {currentStep === "preview" && (
-          <PreviewStep
-            originalStats={originalStats}
-            processedStats={processedStats}
-            originalCount={originalEvents.length}
-            processedCount={processedEvents.length}
-            onSave={handleSaveAndContinue}
-            isProcessing={isProcessing}
           />
         )}
       </div>
@@ -319,7 +367,7 @@ function MergeSuggestionsStep({
   if (suggestions.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-body-24 text-[color:var(--gray)]">
+        <p className="text-base text-[color:var(--gray)]">
           No merge suggestions found. Your activity names look good!
         </p>
       </div>
@@ -344,8 +392,8 @@ function MergeSuggestionsStep({
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-black mb-4">Activity Merge Suggestions</h2>
-      <p className="text-body-24 text-[color:var(--gray)] mb-6">
+      <h2 className="text-2xl font-bold text-[color:var(--text-primary)] mb-4">Activity Merge Suggestions</h2>
+      <p className="text-base text-[color:var(--gray)] mb-6">
         We found {suggestions.length} groups of similar activities that you might want to merge.
       </p>
 
@@ -357,7 +405,7 @@ function MergeSuggestionsStep({
             <div
               key={index}
               className={`border-2 rounded-lg p-4 ${
-                applied ? "border-green-500 bg-green-50" : "border-gray-300"
+                applied ? "border-[color:var(--color-success-border)] bg-[color:var(--color-success-light)]" : "border-gray-300"
               }`}
             >
               <div className="flex items-start justify-between mb-3">
@@ -376,7 +424,7 @@ function MergeSuggestionsStep({
                   
                   <div className="space-y-1 mb-3">
                     {suggestion.activities.map((activity, i) => (
-                      <div key={i} className="text-body-24 text-black">
+                      <div key={i} className="text-base text-[color:var(--text-primary)]">
                         • {activity}
                       </div>
                     ))}
@@ -388,51 +436,51 @@ function MergeSuggestionsStep({
                         type="text"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-body-24"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-base"
                         autoFocus
                       />
                       <button
                         onClick={() => handleSaveEdit(suggestion)}
-                        className="px-4 py-2 bg-[color:var(--red-1)] text-white rounded-lg text-body-24"
+                        className="px-4 py-2 bg-[color:var(--primary)] text-white rounded-lg text-sm"
                       >
                         Save
                       </button>
                       <button
                         onClick={() => setEditingSuggestion(null)}
-                        className="px-4 py-2 bg-gray-200 text-black rounded-lg text-body-24"
+                        className="px-4 py-2 bg-gray-200 text-[color:var(--text-primary)] rounded-lg text-sm"
                       >
                         Cancel
                       </button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <span className="text-body-24 font-semibold text-black">
+                      <span className="text-base font-semibold text-[color:var(--text-primary)]">
                         → Merge to: "{suggestion.suggestedName}"
                       </span>
                       {!applied && (
                         <>
                           <button
                             onClick={() => handleStartEdit(suggestion)}
-                            className="px-4 py-2 bg-gray-200 text-black rounded-lg text-body-24"
+                            className="px-4 py-2 bg-gray-200 text-[color:var(--text-primary)] rounded-lg text-sm"
                           >
                             Edit Name
                           </button>
                           <button
                             onClick={() => onApply(suggestion, suggestion.suggestedName)}
-                            className="px-4 py-2 bg-[color:var(--red-1)] text-white rounded-lg text-body-24"
+                            className="px-4 py-2 bg-[color:var(--primary)] text-white rounded-lg text-sm"
                           >
                             Apply Merge
                           </button>
                           <button
                             onClick={() => onReject(suggestion)}
-                            className="px-4 py-2 bg-gray-200 text-black rounded-lg text-body-24"
+                            className="px-4 py-2 bg-gray-200 text-[color:var(--text-primary)] rounded-lg text-sm"
                           >
                             Skip
                           </button>
                         </>
                       )}
                       {applied && (
-                        <span className="text-sm text-green-600 font-semibold">✓ Applied</span>
+                        <span className="text-sm text-[color:var(--color-success)] font-semibold">Applied</span>
                       )}
                     </div>
                   )}
@@ -477,16 +525,33 @@ function DataQualityStep({
     );
   }
 
+  const handleRemoveAll = () => {
+    issues.forEach((issue) => onRemove(issue));
+  };
+
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-black mb-4">Data Quality Issues</h2>
-      <p className="text-body-24 text-[color:var(--gray)] mb-6">
-        We found {issues.length} potential issues. Review and decide what to keep or remove.
-      </p>
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h2 className="text-2xl font-bold text-[color:var(--text-primary)]">Data Quality Issues</h2>
+          <p className="text-body-24 text-[color:var(--gray)] mt-2">
+            We found {issues.length} potential issues. Review and decide what to keep or remove.
+          </p>
+        </div>
+        {issues.length > 0 && (
+          <button
+            onClick={handleRemoveAll}
+            className="px-5 py-2 bg-[color:var(--primary)] text-white rounded-full text-sm font-semibold hover:opacity-90 transition-opacity whitespace-nowrap"
+            type="button"
+          >
+            Remove All
+          </button>
+        )}
+      </div>
 
       {groupedIssues.error.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-xl font-semibold text-red-600">Errors ({groupedIssues.error.length})</h3>
+          <h3 className="text-xl font-semibold text-[color:var(--color-error)]">Errors ({groupedIssues.error.length})</h3>
           {groupedIssues.error.map((issue, index) => (
             <IssueCard key={index} issue={issue} onRemove={onRemove} onKeep={onKeep} />
           ))}
@@ -514,28 +579,54 @@ function IssueCard({
   onRemove: (issue: DataQualityIssue) => void;
   onKeep: (issue: DataQualityIssue) => void;
 }) {
+  // Determine colors based on issue type
+  const getCardStyle = () => {
+    if (issue.type === "birthday" || issue.type === "recurring_holiday") {
+      return "border-purple-300 bg-purple-50";
+    }
+    if (issue.severity === "error") {
+      return "border-[color:var(--color-error-border)] bg-[color:var(--color-error-light)]";
+    }
+    return "border-orange-300 bg-orange-50";
+  };
+
+  const getIssueTypeLabel = () => {
+    switch (issue.type) {
+      case "birthday": return "Birthday Event";
+      case "recurring_holiday": return "Recurring Holiday";
+      case "long_duration": return "Long Duration";
+      case "zero_duration": return "Invalid Duration";
+      case "duplicate": return "Duplicate";
+      case "future_event": return "Future Event";
+      default: return "Issue";
+    }
+  };
+
   return (
-    <div className={`border-2 rounded-lg p-4 ${
-      issue.severity === "error" ? "border-red-300 bg-red-50" : "border-orange-300 bg-orange-50"
-    }`}>
-      <div className="flex items-start justify-between">
+    <div className="border-2 rounded-lg p-4 border-[color:var(--color-error-border)] bg-[color:var(--color-error-light)]">
+      <div className="flex items-start justify-between text-left">
         <div className="flex-1">
-          <p className="font-semibold text-black mb-1">{issue.event.title}</p>
-          <p className="text-sm text-[color:var(--gray)] mb-2">{issue.message}</p>
-          <p className="text-xs text-[color:var(--gray)]">
+          <div className="flex items-start gap-2 mb-1">
+            <span className="text-xs font-semibold text-gray-600 bg-white px-2 py-0.5 rounded">
+              {getIssueTypeLabel()}
+            </span>
+          </div>
+          <p className="font-semibold text-[color:var(--text-primary)] mb-1 text-left">{issue.event.title}</p>
+          <p className="text-sm text-[color:var(--gray)] mb-2 text-left">{issue.message}</p>
+          <p className="text-xs text-[color:var(--gray)] text-left">
             {issue.event.start.toLocaleDateString()} • {Math.round(issue.event.durationMinutes / 60)}h {issue.event.durationMinutes % 60}m
           </p>
         </div>
         <div className="flex gap-2 ml-4">
           <button
             onClick={() => onKeep(issue)}
-            className="px-4 py-2 bg-gray-200 text-black rounded-lg text-sm"
+            className="px-4 py-2 bg-gray-200 text-[color:var(--text-primary)] rounded-full text-sm hover:bg-gray-300 transition-colors"
           >
             Keep
           </button>
           <button
             onClick={() => onRemove(issue)}
-            className="px-4 py-2 bg-[color:var(--red-1)] text-white rounded-lg text-sm"
+            className="px-4 py-2 bg-[color:var(--primary)] text-white rounded-full text-sm hover:opacity-90 transition-opacity"
           >
             Remove
           </button>
@@ -573,11 +664,11 @@ function PreviewStep({
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-black mb-4">Preview Changes</h2>
+      <h2 className="text-2xl font-bold text-[color:var(--text-primary)] mb-4">Preview Changes</h2>
       
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-4">
-          <h3 className="text-xl font-semibold text-black">Before</h3>
+          <h3 className="text-xl font-semibold text-[color:var(--text-primary)]">Before</h3>
           <div className="space-y-2">
             <p className="text-body-24">
               <span className="font-semibold">Events:</span> {originalCount}
@@ -592,12 +683,12 @@ function PreviewStep({
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-xl font-semibold text-black">After</h3>
+          <h3 className="text-xl font-semibold text-[color:var(--text-primary)]">After</h3>
           <div className="space-y-2">
             <p className="text-body-24">
               <span className="font-semibold">Events:</span> {processedCount}
               {changes.events !== 0 && (
-                <span className={`ml-2 ${changes.events < 0 ? "text-red-600" : "text-green-600"}`}>
+                <span className={`ml-2 ${changes.events < 0 ? "text-[color:var(--color-error)]" : "text-[color:var(--color-success)]"}`}>
                   ({changes.events > 0 ? "+" : ""}{changes.events})
                 </span>
               )}
@@ -605,7 +696,7 @@ function PreviewStep({
             <p className="text-body-24">
               <span className="font-semibold">Activities:</span> {processedStats.uniqueActivities}
               {changes.activities !== 0 && (
-                <span className={`ml-2 ${changes.activities < 0 ? "text-red-600" : "text-green-600"}`}>
+                <span className={`ml-2 ${changes.activities < 0 ? "text-[color:var(--color-error)]" : "text-[color:var(--color-success)]"}`}>
                   ({changes.activities > 0 ? "+" : ""}{changes.activities})
                 </span>
               )}
@@ -613,7 +704,7 @@ function PreviewStep({
             <p className="text-body-24">
               <span className="font-semibold">Total Time:</span> {formatAsDaysHoursMinutes(processedStats.totalMinutes)}
               {changes.time !== 0 && (
-                <span className={`ml-2 ${changes.time < 0 ? "text-red-600" : "text-green-600"}`}>
+                <span className={`ml-2 ${changes.time < 0 ? "text-[color:var(--color-error)]" : "text-[color:var(--color-success)]"}`}>
                   ({changes.time > 0 ? "+" : ""}{Math.round(changes.time / 60)}h)
                 </span>
               )}
@@ -626,7 +717,7 @@ function PreviewStep({
         <button
           onClick={onSave}
           disabled={isProcessing}
-          className="w-full px-8 py-4 bg-[color:var(--red-1)] text-white rounded-full text-body-24 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full px-8 py-4 bg-[color:var(--primary)] text-white rounded-full text-body-24 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isProcessing ? "Saving..." : "Save & Continue to Dashboard"}
         </button>

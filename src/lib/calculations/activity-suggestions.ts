@@ -9,7 +9,7 @@ export interface MergeSuggestion {
 }
 
 export interface DataQualityIssue {
-  type: "long_duration" | "zero_duration" | "duplicate" | "future_event";
+  type: "long_duration" | "zero_duration" | "duplicate" | "future_event" | "birthday" | "recurring_holiday";
   event: CalendarEvent;
   message: string;
   severity: "warning" | "error";
@@ -171,6 +171,31 @@ export function generateMergeSuggestions(
 }
 
 /**
+ * Check if event title suggests it's a birthday
+ */
+function isBirthdayEvent(title: string): boolean {
+  const normalized = title.toLowerCase();
+  const birthdayKeywords = [
+    'birthday', 'bday', 'b-day', 'born', 'birth day',
+    '\'s birthday', 'cumpleaños', 'aniversário', 'geburtstag'
+  ];
+  return birthdayKeywords.some(keyword => normalized.includes(keyword));
+}
+
+/**
+ * Check if event title suggests it's a holiday or special day
+ */
+function isHolidayEvent(title: string): boolean {
+  const normalized = title.toLowerCase();
+  const holidayKeywords = [
+    'holiday', 'christmas', 'thanksgiving', 'easter', 'new year',
+    'independence day', 'memorial day', 'labor day', 'halloween',
+    'valentine', 'mother\'s day', 'father\'s day', 'anniversary'
+  ];
+  return holidayKeywords.some(keyword => normalized.includes(keyword));
+}
+
+/**
  * Detect data quality issues
  */
 export function detectDataQualityIssues(
@@ -233,6 +258,58 @@ export function detectDataQualityIssues(
           severity: "warning",
         });
       });
+    }
+  });
+
+  // Check for birthdays
+  events.forEach((event) => {
+    if (isBirthdayEvent(event.title)) {
+      issues.push({
+        type: "birthday",
+        event,
+        message: `This appears to be a birthday event. Consider excluding it from time tracking.`,
+        severity: "warning",
+      });
+    }
+  });
+
+  // Check for recurring holidays/special days (same title appearing yearly)
+  const titlesByYear = new Map<string, Map<number, CalendarEvent[]>>();
+  events.forEach((event) => {
+    const normalized = normalizeName(event.title);
+    const year = event.start.getFullYear();
+    
+    if (!titlesByYear.has(normalized)) {
+      titlesByYear.set(normalized, new Map());
+    }
+    const yearMap = titlesByYear.get(normalized)!;
+    if (!yearMap.has(year)) {
+      yearMap.set(year, []);
+    }
+    yearMap.get(year)!.push(event);
+  });
+
+  // Detect events that occur once per year for multiple years (likely holidays/birthdays)
+  titlesByYear.forEach((yearMap, normalized) => {
+    const years = Array.from(yearMap.keys());
+    if (years.length >= 2) { // Appears in at least 2 different years
+      // Check if it appears roughly once per year (1-3 times per year)
+      const eventsPerYear = Array.from(yearMap.values());
+      const avgPerYear = eventsPerYear.reduce((sum, events) => sum + events.length, 0) / years.length;
+      
+      if (avgPerYear <= 3 && (isHolidayEvent(eventsPerYear[0][0].title) || isBirthdayEvent(eventsPerYear[0][0].title))) {
+        // Flag all instances of this recurring event
+        yearMap.forEach((yearEvents) => {
+          yearEvents.forEach((event) => {
+            issues.push({
+              type: "recurring_holiday",
+              event,
+              message: `This event recurs yearly (appears in ${years.length} years). Likely a holiday or birthday.`,
+              severity: "warning",
+            });
+          });
+        });
+      }
     }
   });
 

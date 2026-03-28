@@ -48,3 +48,7 @@ console.log('Total duration:', hours, 'hours', mins, 'minutes');
 console.log('\nFirst event:', workoutEvents[0]?.start.toISOString());
 console.log('Last event:', workoutEvents[workoutEvents.length - 1]?.start.toISOString());
 
+
+
+
+

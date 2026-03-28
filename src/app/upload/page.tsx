@@ -35,7 +35,7 @@ export default function UploadPage() {
   return (
     <main className="h-90% flex flex-col items-center justify-center px-18">
       <div className="w-full max-w-2xl flex flex-col items-center">
-        <h1 className="text-5xl font-bold text-black mb-4 text-center">
+        <h1 className="text-5xl font-bold text-[color:var(--text-primary)] mb-4 text-center">
           Upload Your Calendar(s)
         </h1>
         <p className="text-2xl text-[color:var(--gray)] mb-8 text-center">

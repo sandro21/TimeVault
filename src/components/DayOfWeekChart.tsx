@@ -13,6 +13,7 @@ import {
   Cell,
 } from "recharts";
 import { formatAsCompactHoursMinutes } from "@/lib/calculations/stats";
+import { getPrimaryGradientColor } from "@/lib/colors";
 
 interface DayOfWeekChartProps {
   events: CalendarEvent[];
@@ -27,7 +28,7 @@ const CustomLabel = ({ x, y, width, value }: any) => {
     <text
       x={x + width / 2}
       y={y - 5}
-      fill="#DB1E18"
+      fill="var(--primary)"
       textAnchor="middle"
       fontSize={12}
       fontWeight={600}
@@ -53,17 +54,11 @@ export function DayOfWeekChart({ events }: DayOfWeekChartProps) {
 
     // Convert to chart data format with color based on value
     return dayTotals.map((minutes, index) => {
-      // Calculate color intensity (0 to 1) - more pronounced variation
+      // Calculate color intensity (0 to 1) - higher values = darker
       const intensity = maxValue > 0 ? minutes / maxValue : 0;
       
-      // Create more pronounced color gradient: bright pink/light red to darker red
-      // Lower values: brighter, more pink (higher RGB values)
-      // Higher values: darker red (lower RGB values)
-      const red = Math.floor(255 - (intensity * 60)); // 255 to 195 (bright to darker)
-      const green = Math.floor(150 - (intensity * 120)); // 150 to 30 (pink to red)
-      const blue = Math.floor(150 - (intensity * 126)); // 150 to 24 (pink to red)
-      
-      const color = `rgb(${red}, ${green}, ${blue})`;
+      // Use primary-based gradient (intensity 0 = lightest, 1 = darkest)
+      const color = getPrimaryGradientColor(intensity);
       
       return {
         day: DAY_NAMES[index],
@@ -89,14 +84,14 @@ export function DayOfWeekChart({ events }: DayOfWeekChartProps) {
           data={chartData}
           margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
           <XAxis
             dataKey="day"
-            stroke="#3B3C40"
+            stroke="var(--chart-axis)"
             style={{ fontSize: '12px' }}
           />
           <YAxis
-            stroke="#3B3C40"
+            stroke="var(--chart-axis)"
             style={{ fontSize: '12px' }}
             tickFormatter={(value) => {
               if (value >= 60) {

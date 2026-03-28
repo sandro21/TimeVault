@@ -3,6 +3,7 @@
 import { CalendarEvent } from "@/lib/calculations/stats";
 import { useMemo, useState } from "react";
 import { formatAsCompactHoursMinutes } from "@/lib/calculations/stats";
+import { getPrimaryGradientColor } from "@/lib/colors";
 
 interface TimeOfDayChartProps {
   events: CalendarEvent[];
@@ -60,14 +61,12 @@ export function TimeOfDayChart({ events }: TimeOfDayChartProps) {
     };
   };
 
-  // Get color based on intensity - red gradient
+  // Get color based on intensity - primary-based gradient
   const getIntensityColor = (intensity: number) => {
+    // Convert intensity from 0-100 to 0-1 for gradient function
     const ratio = intensity / 100;
-    // Red gradient: bright pink/light red to darker red
-    const r = Math.round(255 - ratio * 60); // 255 to 195
-    const g = Math.round(150 - ratio * 120); // 150 to 30
-    const b = Math.round(150 - ratio * 126); // 150 to 24
-    return `rgb(${r}, ${g}, ${b})`;
+    // Use primary-based gradient (ratio 0 = lightest, 1 = darkest)
+    return getPrimaryGradientColor(ratio);
   };
 
   // Create path for segment outline (full segment)
@@ -177,7 +176,7 @@ export function TimeOfDayChart({ events }: TimeOfDayChartProps) {
               y={pos.y}
               textAnchor="middle"
               dominantBaseline="middle"
-              fill="#3B3C40"
+              fill="var(--chart-axis)"
               fontSize="11"
               fontWeight="500"
             >
@@ -201,7 +200,7 @@ export function TimeOfDayChart({ events }: TimeOfDayChartProps) {
               <path
                 d={createSegmentOutlinePath(data.hour, size, innerRadius, outerRadius)}
                 fill="none"
-                stroke="#DB1E18"
+                stroke="var(--primary)"
                 strokeWidth="1"
               />
               {/* Filled portion based on intensity */}
@@ -237,8 +236,8 @@ export function TimeOfDayChart({ events }: TimeOfDayChartProps) {
           cx={size / 2}
           cy={size / 2}
           r={innerRadius}
-          fill="#ffffff"
-          stroke="#DB1E18"
+          fill="var(--white)"
+          stroke="var(--primary)"
           strokeWidth="2"
         />
 
@@ -251,7 +250,7 @@ export function TimeOfDayChart({ events }: TimeOfDayChartProps) {
               y={size / 2 - 12}
               textAnchor="middle"
               dominantBaseline="middle"
-              fill="#DB1E18"
+              fill="var(--primary)"
               fontSize="18"
               fontWeight="700"
             >
@@ -307,10 +306,10 @@ export function TimeOfDayChart({ events }: TimeOfDayChartProps) {
           }}
         >
           <div className="text-center">
-            <div className="text-sm font-semibold text-black mb-1">
+            <div className="text-sm font-semibold text-[color:var(--text-primary)] mb-1">
               {formatHourLabel(hoveredHour)}
             </div>
-            <div className="text-sm text-[#DB1E18] font-semibold">
+            <div className="text-sm text-[color:var(--primary)] font-semibold">
               {chartData[hoveredHour].count} {chartData[hoveredHour].count === 1 ? 'activity' : 'activities'}
             </div>
           </div>

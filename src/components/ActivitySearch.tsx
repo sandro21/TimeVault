@@ -78,14 +78,16 @@ export function ActivitySearch({ events }: ActivitySearchProps) {
   const handleActivitySelect = (activityName: string) => {
     setSearchTerm(activityName); // Keep the activity name in the search bar
     setIsOpen(false);
-    router.push(`/activity?search=${encodeURIComponent(activityName)}`);
+    // Event search - exact match
+    router.push(`/activity?search=${encodeURIComponent(activityName)}&type=event`);
   };
 
   const handleSearch = (searchValue: string) => {
     if (searchValue.trim().length >= 1) {
       setSearchTerm(searchValue.trim()); // Keep the search term in the search bar
       setIsOpen(false);
-      router.push(`/activity?search=${encodeURIComponent(searchValue.trim())}`);
+      // String search - substring matching
+      router.push(`/activity?search=${encodeURIComponent(searchValue.trim())}&type=string`);
     }
   };
 
@@ -123,8 +125,8 @@ export function ActivitySearch({ events }: ActivitySearchProps) {
 
   return (
     <div className="relative flex items-center gap-2" ref={searchRef}>
-      <div className="bg-white px-4 py-2 rounded-full flex items-center gap-2 cursor-pointer min-w-[200px]">
-        <Search size={18} className="text-black flex-shrink-0" />
+      <div className="bg-[color:var(--card-bg)] px-4 py-2 rounded-full flex items-center gap-2 cursor-pointer min-w-[200px]" style={{ backdropFilter: 'blur(var(--card-backdrop-blur))' }}>
+        <Search size={18} className="text-[color:var(--text-primary)] flex-shrink-0" />
         <input
           ref={inputRef}
           type="text"
@@ -133,33 +135,35 @@ export function ActivitySearch({ events }: ActivitySearchProps) {
           onFocus={handleInputFocus}
           onKeyDown={handleKeyDown}
           placeholder="Search an activity"
-          className="text-body-24 text-black bg-transparent border-none outline-none flex-1 min-w-0"
+          className="text-body-24 bg-transparent border-none outline-none flex-1 min-w-0 placeholder:text-[color:var(--text-secondary)]"
+          style={{ color: 'var(--text-primary)' }}
         />
       </div>
       {(searchTerm || isOnActivityPage) && (
         <button
           onClick={handleClear}
-          className="flex-shrink-0 hover:opacity-70 bg-white w-10 h-10 rounded-full flex items-center justify-center"
+          className="flex-shrink-0 hover:opacity-70 bg-[color:var(--card-bg)] w-10 h-10 rounded-full flex items-center justify-center"
+          style={{ backdropFilter: 'blur(var(--card-backdrop-blur))' }}
           type="button"
           title={isOnActivityPage ? "Back to all activities" : "Clear search"}
         >
-          <X size={18} className="text-black" />
+          <X size={18} className="text-[color:var(--text-primary)]" />
         </button>
       )}
 
       {/* Dropdown */}
       {isOpen && matchingActivities.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[300px] overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-[color:var(--card-bg)] rounded-lg shadow-lg border border-[color:var(--text-secondary)]/20 z-50 max-h-[300px] overflow-y-auto" style={{ backdropFilter: 'blur(var(--card-backdrop-blur))' }}>
           {/* Show total count for search term at the top */}
           <button
             onClick={() => handleSearch(searchTerm)}
-            className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100"
+            className="w-full px-4 py-3 text-left hover:opacity-80 transition-colors flex items-center justify-between border-b border-[color:var(--text-secondary)]/20"
             type="button"
           >
-            <span className="text-body-24 text-black font-semibold">
+            <span className="text-body-24 font-semibold" style={{ color: 'var(--text-primary)' }}>
               Search "{searchTerm}"
             </span>
-            <span className="text-sm text-gray-500 ml-2 flex-shrink-0">
+            <span className="text-sm text-[color:var(--text-secondary)] ml-2 flex-shrink-0">
               {getTotalEventCountForSearch(searchTerm)} {getTotalEventCountForSearch(searchTerm) === 1 ? "event" : "events"}
             </span>
           </button>
@@ -168,11 +172,11 @@ export function ActivitySearch({ events }: ActivitySearchProps) {
             <button
               key={activity.name}
               onClick={() => handleActivitySelect(activity.name)}
-              className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center justify-between"
+              className="w-full px-4 py-3 text-left hover:opacity-80 transition-colors flex items-center justify-between"
               type="button"
             >
-              <span className="text-body-24 text-black truncate">{activity.name}</span>
-              <span className="text-sm text-gray-500 ml-2 flex-shrink-0">
+              <span className="text-body-24 truncate" style={{ color: 'var(--text-primary)' }}>{activity.name}</span>
+              <span className="text-sm text-[color:var(--text-secondary)] ml-2 flex-shrink-0">
                 {activity.count} {activity.count === 1 ? "event" : "events"}
               </span>
             </button>
@@ -182,8 +186,8 @@ export function ActivitySearch({ events }: ActivitySearchProps) {
 
       {/* No results message */}
       {isOpen && searchTerm.trim().length >= 1 && matchingActivities.length === 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-50 px-4 py-3">
-          <span className="text-body-24 text-gray-500">No activities found</span>
+        <div className="absolute top-full left-0 right-0 mt-2 bg-[color:var(--card-bg)] rounded-lg shadow-lg border border-[color:var(--text-secondary)]/20 z-50 px-4 py-3" style={{ backdropFilter: 'blur(var(--card-backdrop-blur))' }}>
+          <span className="text-body-24 text-[color:var(--text-secondary)]">No activities found</span>
         </div>
       )}
     </div>

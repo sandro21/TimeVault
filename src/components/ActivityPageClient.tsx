@@ -42,10 +42,11 @@ function formatDateTime(date: Date): string {
 interface ActivityPageClientProps {
   events: CalendarEvent[];
   searchString: string;
+  searchType: string;
   timeFilter: string;
 }
 
-export function ActivityPageClient({ events, searchString, timeFilter }: ActivityPageClientProps) {
+export function ActivityPageClient({ events, searchString, searchType, timeFilter }: ActivityPageClientProps) {
   const {
     selectedFilter,
     currentYear,
@@ -57,16 +58,13 @@ export function ActivityPageClient({ events, searchString, timeFilter }: Activit
   } = useFilter();
 
 
-  // Determine if this is an exact match (object search) or substring search
-  const allUniqueActivities = Array.from(new Set(events.map(e => e.title)));
-  const isExactMatch = allUniqueActivities.some(
-    activity => activity.toLowerCase().trim() === searchString.toLowerCase().trim()
-  );
+  // Determine search mode based on searchType parameter
+  const isExactMatch = searchType === "event";
   
-  // Filter events: exact match for object search, substring for string search
+  // Filter events: exact match for event search, substring for string search
   const activityFilteredEvents = events.filter((event) => {
     if (isExactMatch) {
-      // Exact match (object search) - only match this exact activity name
+      // Exact match (event search) - only match this exact activity name
       return event.title.toLowerCase().trim() === searchString.toLowerCase().trim();
     } else {
       // Substring search (string search) - match any activity containing the search string
@@ -164,7 +162,7 @@ export function ActivityPageClient({ events, searchString, timeFilter }: Activit
       {/* Section 1 Header */}
       <section>
         <div className="flex items-center justify-between">
-          <h2 className="text-section-header text-black font-bold italic">
+          <h2 className="text-section-header text-[color:var(--text-primary)] font-bold italic">
             {activityStats.name}
           </h2>
           {firstSessionEvent && lastSessionEvent && (
@@ -179,7 +177,7 @@ export function ActivityPageClient({ events, searchString, timeFilter }: Activit
           {/* 1. Top left - Total Count (spans 1 col) */}
           <div className="card-soft">
             <h3 className="text-card-title">Total Count</h3>
-            <div className="text-number-large text-[color:var(--red-1)]">
+            <div className="text-number-large text-[color:var(--primary)]">
               {activityStats.totalCount}
             </div>
           </div>
@@ -187,7 +185,7 @@ export function ActivityPageClient({ events, searchString, timeFilter }: Activit
           {/* 2. Top middle - Time Logged (spans 1 col) */}
           <div className="card-soft px-8">
             <h3 className="text-card-title mb-2">Time Logged</h3>
-            <p className="text-body-24 text-[color:var(--red-1)]">
+            <p className="text-body-24 text-[color:var(--primary)]">
               {timeHoursMinutesFormatted}
             </p>
             {totalDays > 0 && (
@@ -206,16 +204,16 @@ export function ActivityPageClient({ events, searchString, timeFilter }: Activit
 
           {/* 4. Bottom - Daily Average */}
           <div className="card-soft flex flex-col items-center justify-center text-center px-6">
-            <h3 className="text-card-title text-black">Daily Average</h3>
-            <div className="mt-4 text-number-large text-[color:var(--red-1)]">
+            <h3 className="text-card-title text-[color:var(--text-primary)]">Daily Average</h3>
+            <div className="mt-4 text-number-large text-[color:var(--primary)]">
               {formatAsCompactHoursMinutes(dailyAverage)}
             </div>
           </div>
 
           {/* 5. Bottom - Weekly Average */}
           <div className="card-soft flex flex-col items-center justify-center text-center px-6">
-            <h3 className="text-card-title text-black">Weekly Average</h3>
-            <div className="mt-4 text-number-large text-[color:var(--red-1)]">
+            <h3 className="text-card-title text-[color:var(--text-primary)]">Weekly Average</h3>
+            <div className="mt-4 text-number-large text-[color:var(--primary)]">
               {formatAsCompactHoursMinutes(weeklyAverage)}
             </div>
           </div>
@@ -241,7 +239,7 @@ export function ActivityPageClient({ events, searchString, timeFilter }: Activit
           {/* 2. Average (spans 1 col, 1 row, middle column) */}
           <div className="card-soft">
             <h3 className="text-card-title">Average</h3>
-            <div className="text-number-medium text-[color:var(--red-1)]">
+            <div className="text-number-medium text-[color:var(--primary)]">
               {formatAsCompactHoursMinutes(activityStats.averageSessionMinutes)}
             </div>
           </div>
@@ -257,7 +255,7 @@ export function ActivityPageClient({ events, searchString, timeFilter }: Activit
           {/* 4. Longest (spans 1 col, 1 row, middle column, under Average) */}
           <div className="card-soft gap-0">
             <h3 className="text-card-title">Longest</h3>
-            <div className="text-number-medium text-[color:var(--red-1)]">
+            <div className="text-number-medium text-[color:var(--primary)]">
               {activityStats.longestSession 
                 ? formatAsCompactHoursMinutes(activityStats.longestSession.minutes)
                 : "N/A"}
@@ -288,7 +286,7 @@ export function ActivityPageClient({ events, searchString, timeFilter }: Activit
             {/* Longest Streak */}
             <div className="card-soft">
               <h3 className="text-card-title">Longest Streak</h3>
-              <div className="text-number-medium text-[color:var(--red-1)]">
+              <div className="text-number-medium text-[color:var(--primary)]">
                 {activityStats.longestStreak 
                   ? `${activityStats.longestStreak.days} days`
                   : "N/A"}
@@ -303,7 +301,7 @@ export function ActivityPageClient({ events, searchString, timeFilter }: Activit
             {/* Biggest Break */}
             <div className="card-soft">
               <h3 className="text-card-title">Biggest Break</h3>
-              <div className="text-number-medium text-[color:var(--red-1)]">
+              <div className="text-number-medium text-[color:var(--primary)]">
                 {activityStats.biggestBreak 
                   ? `${activityStats.biggestBreak.days} days`
                   : "N/A"}
@@ -320,7 +318,7 @@ export function ActivityPageClient({ events, searchString, timeFilter }: Activit
 
       {/* Habits Section */}
       <section>
-        <h2 className="text-section-header text-black">
+        <h2 className="text-section-header text-[color:var(--text-primary)]">
           Habits
         </h2>
 

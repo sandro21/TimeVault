@@ -2,28 +2,107 @@
 @import "tw-animate-css";
 
 :root {
-  /* Page background */
+  /* ============================================
+     PAGE & BACKGROUND COLORS
+     ============================================ */
+  
+  /* Main page background - change this to adjust the overall page color */
   --page-bg: #f0ede8;
-
-  /* Card surface */
+  
+  /* Card background - change this to adjust card appearance */
   --card-bg: rgba(242, 242, 242, 0.7);
   --card-backdrop-blur: 54px;
-
-  /* Shadow: 0 0 41.2px -17px rgba(0, 0, 0, 0.25) (rounded slightly) */
   --card-shadow: 0 0 41px -17px rgba(0, 0, 0, 0.25);
-
-  /* Card radius (you can tweak once and use everywhere) */
   --card-radius-lg: 50px;
   --card-radius-xl: 70px;
+  
+  /* Overlay backgrounds (for tooltips, modals, etc.) */
+  --bg-overlay: rgba(255, 255, 255, 0.7);
+  --bg-white: #ffffff;
 
-  --red-1: #DB1E18;
-  --red-2: #AA1713;
-  --red-3: #7A100E;
-  --red-4: #3C0807;
-  --red-5: #1E0403;
+  /* ============================================
+     TEXT COLORS
+     ============================================ */
+  
+  /* Primary text color (main content) */
+  --text-primary: #000000;
+  
+  /* Secondary text color (subtitles, labels) */
+  --text-secondary: #3B3C40;
+  
+  /* Inverse text (for dark backgrounds) */
+  --text-inverse: #ffffff;
 
-  --gray: #3B3C40;
-  --black: black;
+  /* ============================================
+     TIMELINE CHART COLORS
+     ============================================ */
+  
+  /* Timeline axis border - for month markers and axis lines */
+  --timeline-axis-border: #d1d5db;
+
+  /* ============================================
+     PRIMARY BRAND COLOR
+     ============================================ */
+  
+  /* Primary brand color - main accent color */
+  --primary: #DB1E18;
+  
+  /* Primary with opacity (for backgrounds, highlights) */
+  --primary-10: rgba(219, 30, 24, 0.1);
+  --primary-20: rgba(219, 30, 24, 0.2);
+  --primary-30: rgba(219, 30, 24, 0.3);
+  
+  /* ============================================
+     SEMANTIC STATUS COLORS
+     ============================================ */
+  
+  /* Error color - for error messages, warnings, negative states */
+  --color-error: #dc2626;  /* Red-600 equivalent */
+  --color-error-light: #fee2e2;  /* Red-50 equivalent */
+  --color-error-border: #fca5a5;  /* Red-300 equivalent */
+  
+  /* Success color - for success messages, positive states */
+  --color-success: #16a34a;  /* Green-600 equivalent */
+  --color-success-light: #dcfce7;  /* Green-50 equivalent */
+  --color-success-border: #86efac;  /* Green-300 equivalent */
+  
+  /* ============================================
+     CHART COLORS
+     ============================================ */
+  
+  /* Chart color palette - first color uses primary, others are complementary */
+  --chart-color-1: var(--primary);  /* Primary color */
+  --chart-color-2: #3B82F6;  /* Blue */
+  --chart-color-3: #10B981;  /* Green */
+  --chart-color-4: #A855F7;  /* Purple */
+  --chart-color-5: #F97316;  /* Orange */
+  --chart-color-6: #EC4899;  /* Pink */
+  --chart-color-7: #14B8A6;  /* Teal */
+  --chart-color-8: #F59E0B;  /* Amber */
+  --chart-color-9: #8B5CF6;  /* Violet */
+  --chart-color-10: #EF4444; /* Light Red */
+  --chart-color-other: #A0A0A0; /* Gray for "Other" */
+  
+  /* Chart element colors */
+  --chart-grid: #e0e0e0;  /* Grid lines */
+  --chart-axis: #3B3C40;  /* Axis lines and labels */
+  --chart-tooltip-bg: var(--bg-overlay);
+  --chart-tooltip-border: rgba(224, 224, 224, 0.3);
+  
+  /* Chart gradient settings (for dynamic primary-based gradients) */
+  /* These control opacity-based gradients using primary color */
+  --chart-gradient-opacity-max: 1;        /* Maximum opacity (highest value) */
+  --chart-gradient-opacity-min: 0.3;     /* Minimum opacity (lowest value, floor) */
+  
+  /* ============================================
+     BASE COLOR REFERENCES (for utility/compatibility)
+     ============================================ */
+  
+  /* These are kept for backward compatibility and utility use
+     They reference the semantic colors above */
+  --black: var(--text-primary);
+  --white: var(--bg-white);
+  --gray: var(--text-secondary);
 }
 
 
@@ -89,7 +168,7 @@
   padding-right: 24px;
 }
 
-/* Soft red background blobs */
+/* Soft primary background blobs */
 .bg-blobs {
   position: relative;
   overflow: hidden;
@@ -102,13 +181,12 @@
   width: 520px;
   height: 520px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(219, 30, 24, 0.3) 0%, rgba(219, 30, 24, 0) 60%);
+  background: radial-gradient(circle, var(--primary-30) 0%, rgba(219, 30, 24, 0) 60%);
   filter: blur(8px);
   pointer-events: none;
-  }
+}
 
 .bg-blobs::before {
   top: -160px;
   left: -80px;
 }
-

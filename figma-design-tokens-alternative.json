@@ -1,0 +1,91 @@
+{
+  "primary": {
+    "$value": "#DB1E18",
+    "$type": "color"
+  },
+  "primary-10": {
+    "$value": "rgba(219, 30, 24, 0.1)",
+    "$type": "color"
+  },
+  "primary-20": {
+    "$value": "rgba(219, 30, 24, 0.2)",
+    "$type": "color"
+  },
+  "primary-30": {
+    "$value": "rgba(219, 30, 24, 0.3)",
+    "$type": "color"
+  },
+  "text-primary": {
+    "$value": "#000000",
+    "$type": "color"
+  },
+  "text-secondary": {
+    "$value": "#3B3C40",
+    "$type": "color"
+  },
+  "text-inverse": {
+    "$value": "#ffffff",
+    "$type": "color"
+  },
+  "bg-page": {
+    "$value": "#f0ede8",
+    "$type": "color"
+  },
+  "bg-card": {
+    "$value": "rgba(242, 242, 242, 0.7)",
+    "$type": "color"
+  },
+  "bg-white": {
+    "$value": "#ffffff",
+    "$type": "color"
+  },
+  "bg-overlay": {
+    "$value": "rgba(255, 255, 255, 0.7)",
+    "$type": "color"
+  },
+  "border-default": {
+    "$value": "#e0e0e0",
+    "$type": "color"
+  },
+  "border-light": {
+    "$value": "rgba(224, 224, 224, 0.3)",
+    "$type": "color"
+  },
+  "border-gray": {
+    "$value": "#d1d5db",
+    "$type": "color"
+  },
+  "chart-color-1": {
+    "$value": "#DB1E18",
+    "$type": "color"
+  },
+  "chart-color-2": {
+    "$value": "#3B82F6",
+    "$type": "color"
+  },
+  "chart-color-3": {
+    "$value": "#10B981",
+    "$type": "color"
+  },
+  "chart-color-4": {
+    "$value": "#A855F7",
+    "$type": "color"
+  },
+  "chart-color-5": {
+    "$value": "#F97316",
+    "$type": "color"
+  },
+  "chart-color-6": {
+    "$value": "#EC4899",
+    "$type": "color"
+  },
+  "chart-grid": {
+    "$value": "#e0e0e0",
+    "$type": "color"
+  },
+  "chart-axis": {
+    "$value": "#3B3C40",
+    "$type": "color"
+  }
+}
+

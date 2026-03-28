@@ -3,6 +3,7 @@
 import { CalendarEvent } from "@/lib/calculations/stats";
 import { useMemo } from "react";
 import { ActivityCalendar } from "react-activity-calendar";
+import { getCalendarGradientColors } from "@/lib/colors";
 
 interface ContributionsCalendarProps {
   events: CalendarEvent[];
@@ -24,6 +25,11 @@ function calculateLevel(count: number, maxCount: number, maxLevel: number = 4): 
 }
 
 export function ContributionsCalendar({ events }: ContributionsCalendarProps) {
+  // Get primary-based gradient colors for calendar levels
+  const calendarColors = useMemo(() => {
+    return getCalendarGradientColors();
+  }, []);
+
   // Generate calendar data for the last 365 days
   const calendarData = useMemo(() => {
     const today = new Date();
@@ -75,13 +81,7 @@ export function ContributionsCalendar({ events }: ContributionsCalendarProps) {
         fontSize={15}
         maxLevel={4}
         theme={{
-          light: [
-            '#ebedf010', // No activity
-            '#ffcccc', // Level 1 - light red
-            '#ff9999', // Level 2 - medium light red
-            '#ff6666', // Level 3 - medium red
-            '#DB1E18', // Level 4 - your red-1
-          ],
+          light: calendarColors,
         }}
         colorScheme="light"
         showColorLegend={false}
