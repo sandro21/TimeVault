@@ -11,9 +11,13 @@ export function filterEventsByTimeRange(
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
+  
+  // Always filter out future events (cutoff at today)
+  const today = new Date();
+  today.setHours(23, 59, 59, 999); // End of today
 
   if (filterType === "LifeTime") {
-    return events;
+    return events.filter((event) => event.start <= today);
   }
 
   if (filterType === "Year") {
@@ -33,7 +37,7 @@ export function filterEventsByTimeRange(
 
     return events.filter((event) => {
       const eventDate = event.start;
-      return eventDate >= startOfYear && eventDate <= endOfYear;
+      return eventDate >= startOfYear && eventDate <= endOfYear && eventDate <= today;
     });
   }
 
@@ -54,7 +58,7 @@ export function filterEventsByTimeRange(
 
     return events.filter((event) => {
       const eventDate = event.start;
-      return eventDate >= startOfMonth && eventDate <= endOfMonth;
+      return eventDate >= startOfMonth && eventDate <= endOfMonth && eventDate <= today;
     });
   }
 

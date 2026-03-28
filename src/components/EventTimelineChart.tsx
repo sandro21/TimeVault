@@ -45,13 +45,26 @@ export function EventTimelineChart({ events }: EventTimelineChartProps) {
       return { timelineData: [], dateRange: null, monthMarkers: [] };
     }
 
+    // Filter out future events (cutoff at today)
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const filteredEvents = events.filter(event => event.start <= today);
+    
+    if (filteredEvents.length === 0) {
+      return { timelineData: [], dateRange: null, monthMarkers: [] };
+    }
+
     // Get top 10 activities
-    const top10 = computeTopActivities(events, "time", 10);
+    const top10 = computeTopActivities(filteredEvents, "time", 10);
 
     // Find date range from all events (not just top 10)
-    const allDates = events.map(e => [e.start, e.end]).flat();
-    const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
-    const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+    const allDates = filteredEvents.map(e => [e.start, e.end]).flat();
+    const validDates = allDates.filter(d => d.getTime() <= today.getTime());
+    if (validDates.length === 0) {
+      return { timelineData: [], dateRange: null, monthMarkers: [] };
+    }
+    const minDate = new Date(Math.min(...validDates.map(d => d.getTime())));
+    const maxDate = new Date(Math.min(today.getTime(), Math.max(...validDates.map(d => d.getTime()))));
     const totalRange = maxDate.getTime() - minDate.getTime();
 
     if (totalRange === 0) {
@@ -87,7 +100,7 @@ export function EventTimelineChart({ events }: EventTimelineChartProps) {
     // Group events by activity name (case-insensitive matching)
     const eventsByActivity = new Map<string, CalendarEvent[]>();
     top10.forEach((activity) => {
-      const activityEvents = events.filter(
+      const activityEvents = filteredEvents.filter(
         e => e.title.toLowerCase().trim() === activity.name.toLowerCase().trim()
       );
       if (activityEvents.length > 0) {

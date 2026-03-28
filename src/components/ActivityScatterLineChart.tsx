@@ -52,13 +52,18 @@ export function ActivityScatterLineChart({ events }: ActivityScatterLineChartPro
   const [clickedPoint, setClickedPoint] = useState<{ x: number; y: number; data: any } | null>(null);
 
   const { lineData, scatterData, allDays, monthLabels } = useMemo(() => {
-    if (events.length === 0) {
+    // Filter out future events (cutoff at today)
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const filteredEvents = events.filter(event => event.start <= today);
+    
+    if (filteredEvents.length === 0) {
       return { lineData: [], scatterData: [], allDays: [], monthLabels: new Map() };
     }
 
     // Group events by week for line (weekly averages)
     const eventsByWeek = new Map<string, CalendarEvent[]>();
-    events.forEach((event) => {
+    filteredEvents.forEach((event) => {
       const weekStart = getWeekStart(event.start);
       const weekKey = getDayKey(weekStart);
       const weekEvents = eventsByWeek.get(weekKey) || [];
@@ -67,9 +72,13 @@ export function ActivityScatterLineChart({ events }: ActivityScatterLineChartPro
     });
 
     // Get date range for generating all days
-    const allDates = events.map(e => e.start);
+    const allDates = filteredEvents.map(e => e.start);
     const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
-    const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+    const maxDate = new Date(Math.min(...allDates.map(d => d.getTime()).filter(t => t <= today.getTime())));
+    // Ensure maxDate doesn't exceed today
+    if (maxDate > today) {
+      maxDate.setTime(today.getTime());
+    }
     
     // Generate all days in range for x-axis
     const allDaysList: string[] = [];
@@ -126,7 +135,7 @@ export function ActivityScatterLineChart({ events }: ActivityScatterLineChartPro
     });
 
     // Build scatter data: one entry per event (daily)
-    const scatterData: ScatterPoint[] = events.map((event) => ({
+    const scatterData: ScatterPoint[] = filteredEvents.map((event) => ({
       date: getDayKey(event.start),
       minutes: event.durationMinutes,
     }));

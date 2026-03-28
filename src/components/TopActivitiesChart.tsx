@@ -33,9 +33,11 @@ const COLORS = [
 
 export function TopActivitiesChart({ events, topActivities }: TopActivitiesChartProps) {
   const [hoveredData, setHoveredData] = useState<Record<string, number> | null>(null);
+  const [hoveredDataPoint, setHoveredDataPoint] = useState<Record<string, any> | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const hoveredDataRef = useRef<Record<string, number> | null>(null);
+  const hoveredDataPointRef = useRef<Record<string, any> | null>(null);
   const tooltipPositionRef = useRef<{ x: number; y: number } | null>(null);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -51,6 +53,15 @@ export function TopActivitiesChart({ events, topActivities }: TopActivitiesChart
   const chartData = useMemo(() => {
     if (events.length === 0 || topActivities.length === 0) {
       console.log("TopActivitiesChart: No events or activities provided");
+      return [];
+    }
+
+    // Filter out future events (cutoff at today)
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const filteredEvents = events.filter(event => event.start <= today);
+    
+    if (filteredEvents.length === 0) {
       return [];
     }
 
@@ -73,14 +84,14 @@ export function TopActivitiesChart({ events, topActivities }: TopActivitiesChart
 
     // Get all unique week keys across all events
     const allWeekKeys = new Set<string>();
-    events.forEach((event) => {
+    filteredEvents.forEach((event) => {
       allWeekKeys.add(getWeekKey(event.start));
     });
 
     // Group events by activity name
     const eventsByActivity = new Map<string, CalendarEvent[]>();
     topActivities.forEach((activity) => {
-      const activityEvents = events.filter((event) =>
+      const activityEvents = filteredEvents.filter((event) =>
         event.title.toLowerCase() === activity.name.toLowerCase()
       );
       eventsByActivity.set(activity.name, activityEvents);
@@ -114,12 +125,16 @@ export function TopActivitiesChart({ events, topActivities }: TopActivitiesChart
         return prevMonth !== month || prevYear !== year;
       })();
       
+      const monthShort = dateObj.toLocaleDateString('en-US', { month: 'short' });
+      const yearFull = dateObj.getFullYear();
+      
       const dataPoint: Record<string, any> = {
         date: weekKey,
         dateObj,
         month: dateObj.getMonth(), // 0-11
-        year: dateObj.getFullYear(),
-        monthLabel: isFirstWeekOfMonth ? dateObj.toLocaleDateString('en-US', { month: 'short' }) : '',
+        year: yearFull,
+        monthLabel: isFirstWeekOfMonth ? monthShort : '',
+        monthYearLabel: `${monthShort}, ${yearFull}`, // Always show month/year
       };
 
       // Add minutes for each activity
@@ -238,6 +253,7 @@ export function TopActivitiesChart({ events, topActivities }: TopActivitiesChart
       
       prevPayloadRef.current = payloadKey;
       hoveredDataRef.current = hoverData;
+      hoveredDataPointRef.current = data;
       
       // Update position to follow mouse smoothly
       if (coordinate && chartContainerRef.current) {
@@ -266,10 +282,12 @@ export function TopActivitiesChart({ events, topActivities }: TopActivitiesChart
       }
       updateTimeoutRef.current = setTimeout(() => {
         setHoveredData(hoveredDataRef.current);
+        setHoveredDataPoint(hoveredDataPointRef.current);
       }, 0);
     } else if (!active && prevPayloadRef.current !== null) {
       prevPayloadRef.current = null;
       hoveredDataRef.current = null;
+      hoveredDataPointRef.current = null;
       
       // Defer state update to avoid setState during render
       if (updateTimeoutRef.current) {
@@ -277,6 +295,7 @@ export function TopActivitiesChart({ events, topActivities }: TopActivitiesChart
       }
       updateTimeoutRef.current = setTimeout(() => {
         setHoveredData(null);
+        setHoveredDataPoint(null);
       }, 0);
     }
     
@@ -349,7 +368,14 @@ export function TopActivitiesChart({ events, topActivities }: TopActivitiesChart
             willChange: 'transform',
           }}
         >
-          <div className="space-y-2">
+          {/* Month/Year label at top */}
+          {hoveredDataPoint?.monthYearLabel && (
+            <div className="text-xs text-[color:var(--gray)] font-medium mb-1">
+              {hoveredDataPoint.monthYearLabel}
+            </div>
+          )}
+          
+          <div className="space-y-1">
             {(() => {
               // Create array with values and sort by hovered value
               const activitiesWithValues = topActivities.map((activity, index) => ({

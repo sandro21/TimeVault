@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useFilter } from "@/contexts/FilterContext";
 import { CalendarEvent } from "@/lib/calculations/stats";
 import {
@@ -24,6 +25,7 @@ interface DashboardClientProps {
 }
 
 export function DashboardClient({ events }: DashboardClientProps) {
+  const router = useRouter();
   const {
     selectedFilter,
     currentYear,
@@ -67,6 +69,93 @@ export function DashboardClient({ events }: DashboardClientProps) {
     <>
       {/* All Loging Details Class */}
       <section className="space-y-[60px]">
+        {/* Top Activities */}
+        <section className="space-y-[40px]">
+          {/* header */}
+          <h2 className="text-section-header text-black mb-4">
+            Top Activities
+          </h2>
+
+          {/* grid of cards */}
+          <div className="grid grid-cols-[5fr_2fr] grid-rows-[300px_300px] gap-3">
+            {/* Top Activities Table */}
+            <div className="card-soft flex flex-col px-8 py-4 text-left">
+              <div className="flex-1 overflow-y-auto overflow-x-hidden">
+                <table className="table-fixed w-full">
+                  <thead>
+                    <tr className="border-b border-[color:var(--gray)]/20 text-left">
+                      <th className="pb-1 text-left text-body-24 text-[color:var(--gray)] w-[33%] pr-4">Name</th>
+                      <th className="pb-1 text-left text-body-24 text-[color:var(--gray)] w-[20%] pr-4">Duration</th>
+                      <th className="pb-1 text-left text-body-24 text-[color:var(--gray)] w-[15%] pr-4">Count</th>
+                      <th className="pb-1 text-left text-body-24 text-[color:var(--gray)] w-[18%] pr-4">Avg</th>
+                      <th className="pb-1 text-left text-body-24 text-[color:var(--gray)] w-[%]">Longest</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {topActivities.map((activity, index) => {
+                      const colors = [
+                        'text-[#DB1E18]', // Red
+                        'text-[#3B82F6]', // Blue
+                        'text-[#10B981]', // Green
+                        'text-[#A855F7]', // Purple
+                        'text-[#F97316]', // Orange
+                        'text-[#EC4899]', // Pink
+                        'text-[#14B8A6]', // Teal
+                        'text-[#F59E0B]', // Amber
+                        'text-[#8B5CF6]', // Violet
+                        'text-[#EF4444]', // Light Red
+                      ];
+                      const rowColor = colors[index] || 'text-[#F97316]';
+                      
+                      const handleActivityClick = () => {
+                        router.push(`/activity?search=${encodeURIComponent(activity.name)}`);
+                      };
+                      
+                      return (
+                        <tr 
+                          key={activity.name} 
+                          onClick={handleActivityClick}
+                          className="text-body-24 border-b border-[color:var(--gray)]/10 last:border-0 text-left cursor-pointer hover:bg-gray-50 transition-colors"
+                        >
+                          <td className={`py-2 text-body-24 font-semibold pr-4 truncate text-left ${rowColor}`} title={activity.name}>
+                            {index + 1}. {activity.name}
+                          </td>
+                          <td className={`py-2 text-body-24 text-left ${rowColor}`}>
+                            {formatAsCompactHoursMinutes(activity.totalMinutes)}
+                          </td>
+                          <td className={`py-2 text-body-24 text-left ${rowColor}`}>
+                            {activity.count}
+                          </td>
+                          <td className={`py-2 text-body-24 text-left ${rowColor}`}>
+                            {formatAsCompactHoursMinutes(activity.averageSessionMinutes)}
+                          </td>
+                          <td className={`py-2 text-body-24 text-left ${rowColor}`}>
+                            {formatAsCompactHoursMinutes(activity.longestSessionMinutes)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Pie Chart */}
+            <div className="card-soft flex flex-col">
+              <ActivityPieChart data={pieChartData} />
+            </div>
+
+            {/* Bottom element spanning 2 columns - Top Activities Over Time */}
+            <div className="card-soft row-span-2 col-span-2 flex flex-col px-8 py-6 text-left">
+              <h3 className="text-card-title mb-4">Top Activities Over Time</h3>
+              <div className="flex-1 min-h-0 w-full">
+                <TopActivitiesChart events={filteredEvents} topActivities={topActivitiesForChart} />
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="space-y-[40px]">
           {/* header */}
           <h2 className="text-section-header text-black mb-4">
@@ -144,85 +233,6 @@ export function DashboardClient({ events }: DashboardClientProps) {
               <h3 className="text-card-title mb-4">Activity Duration</h3>
               <div className="flex-1 min-h-0 w-full">
                 <ActivityDurationChart events={filteredEvents} />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Top Activities */}
-        <section className="space-y-[40px]">
-          {/* header */}
-          <h2 className="text-section-header text-black mb-4">
-            Top Activities
-          </h2>
-
-          {/* grid of cards */}
-          <div className="grid grid-cols-[3fr_2fr] grid-rows-[300px_300px] gap-3">
-            {/* Top Activities Table */}
-            <div className="card-soft flex flex-col px-8 py-4 text-left">
-              <div className="flex-1 overflow-y-auto overflow-x-hidden">
-                <table className="table-fixed w-full">
-                  <thead>
-                    <tr className="border-b border-[color:var(--gray)]/20 text-left">
-                      <th className="pb-1 text-left text-body-24 text-[color:var(--gray)] w-[33%] pr-4">Name</th>
-                      <th className="pb-1 text-left text-body-24 text-[color:var(--gray)] w-[20%] pr-4">Duration</th>
-                      <th className="pb-1 text-left text-body-24 text-[color:var(--gray)] w-[15%] pr-4">Count</th>
-                      <th className="pb-1 text-left text-body-24 text-[color:var(--gray)] w-[18%] pr-4">Avg</th>
-                      <th className="pb-1 text-left text-body-24 text-[color:var(--gray)] w-[%]">Longest</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {topActivities.map((activity, index) => {
-                      const colors = [
-                        'text-[#DB1E18]', // Red
-                        'text-[#3B82F6]', // Blue
-                        'text-[#10B981]', // Green
-                        'text-[#A855F7]', // Purple
-                        'text-[#F97316]', // Orange
-                        'text-[#EC4899]', // Pink
-                        'text-[#14B8A6]', // Teal
-                        'text-[#F59E0B]', // Amber
-                        'text-[#8B5CF6]', // Violet
-                        'text-[#EF4444]', // Light Red
-                      ];
-                      const rowColor = colors[index] || 'text-[#F97316]';
-                      
-                      return (
-                        <tr key={activity.name} className="text-body-24 border-b border-[color:var(--gray)]/10 last:border-0 text-left">
-                          <td className={`py-2 text-body-24 font-semibold pr-4 truncate text-left ${rowColor}`} title={activity.name}>
-                            {index + 1}. {activity.name}
-                          </td>
-                          <td className={`py-2 text-body-24 text-left ${rowColor}`}>
-                            {formatAsCompactHoursMinutes(activity.totalMinutes)}
-                          </td>
-                          <td className={`py-2 text-body-24 text-left ${rowColor}`}>
-                            {activity.count}
-                          </td>
-                          <td className={`py-2 text-body-24 text-left ${rowColor}`}>
-                            {formatAsCompactHoursMinutes(activity.averageSessionMinutes)}
-                          </td>
-                          <td className={`py-2 text-body-24 text-left ${rowColor}`}>
-                            {formatAsCompactHoursMinutes(activity.longestSessionMinutes)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Pie Chart */}
-            <div className="card-soft flex flex-col">
-              <ActivityPieChart data={pieChartData} />
-            </div>
-
-            {/* Bottom element spanning 2 columns - Top Activities Over Time */}
-            <div className="card-soft row-span-2 col-span-2 flex flex-col px-8 py-6 text-left">
-              <h3 className="text-card-title mb-4">Top Activities Over Time</h3>
-              <div className="flex-1 min-h-0 w-full">
-                <TopActivitiesChart events={filteredEvents} topActivities={topActivitiesForChart} />
               </div>
             </div>
           </div>

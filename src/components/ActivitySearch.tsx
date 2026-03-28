@@ -91,7 +91,7 @@ export function ActivitySearch({ events }: ActivitySearchProps) {
 
   const handleBackToHome = () => {
     setSearchTerm("");
-    router.push("/");
+    router.push("/all-activity");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

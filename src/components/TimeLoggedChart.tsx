@@ -75,6 +75,15 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
       return [];
     }
 
+    // Filter out future events (cutoff at today)
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const filteredEvents = events.filter(event => event.start <= today);
+    
+    if (filteredEvents.length === 0) {
+      return [];
+    }
+
     // Helper functions for different intervals
     const getIntervalStart = (date: Date, interval: IntervalType): Date => {
       const d = new Date(date);
@@ -113,7 +122,7 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
 
     // Group by interval
     const eventsByInterval = new Map<string, number>();
-    events.forEach((event) => {
+    filteredEvents.forEach((event) => {
       const intervalKey = getIntervalKey(event.start, selectedInterval);
       const currentMinutes = eventsByInterval.get(intervalKey) || 0;
       eventsByInterval.set(intervalKey, currentMinutes + event.durationMinutes);
@@ -124,22 +133,27 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
       const allIntervals: string[] = [];
       let currentInterval: Date;
       
+      // Cap yearEnd at today if it's the current year
+      const yearEnd = currentYear === today.getFullYear() 
+        ? new Date(today) 
+        : new Date(currentYear, 11, 31);
+      
       if (selectedInterval === "Monthly") {
-        // Generate all 12 months for the selected year
-        for (let month = 0; month < 12; month++) {
+        // Generate all 12 months, but cap at current month if it's current year
+        const maxMonth = currentYear === today.getFullYear() ? today.getMonth() : 11;
+        for (let month = 0; month <= maxMonth; month++) {
           const monthDate = new Date(currentYear, month, 1);
           const intervalKey = getIntervalKey(monthDate, selectedInterval);
           allIntervals.push(intervalKey);
         }
       } else if (selectedInterval === "Weekly") {
-        // Generate all weeks in the year (from Jan 1 to Dec 31)
+        // Generate all weeks in the year (from Jan 1 to yearEnd)
         const yearStart = new Date(currentYear, 0, 1); // January 1
-        const yearEnd = new Date(currentYear, 11, 31); // December 31
         const firstWeekStart = getIntervalStart(yearStart, selectedInterval);
         const lastWeekStart = getIntervalStart(yearEnd, selectedInterval);
         
         currentInterval = new Date(firstWeekStart);
-        while (currentInterval <= lastWeekStart) {
+        while (currentInterval <= lastWeekStart && currentInterval <= today) {
           const intervalKey = getIntervalKey(currentInterval, selectedInterval);
           // Only include weeks that are within the selected year
           if (currentInterval.getFullYear() === currentYear || 
@@ -151,12 +165,11 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
           currentInterval.setDate(currentInterval.getDate() + 7);
         }
       } else if (selectedInterval === "Daily") {
-        // Generate all days in the year
+        // Generate all days in the year, capped at today
         const yearStart = new Date(currentYear, 0, 1); // January 1
-        const yearEnd = new Date(currentYear, 11, 31); // December 31
         currentInterval = new Date(yearStart);
         
-        while (currentInterval <= yearEnd) {
+        while (currentInterval <= yearEnd && currentInterval <= today) {
           const intervalKey = getIntervalKey(currentInterval, selectedInterval);
           if (!allIntervals.includes(intervalKey)) {
             allIntervals.push(intervalKey);
@@ -210,11 +223,14 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
     }
     
     // Find the date range (for non-Year filters)
-    const allDates = events.map(e => e.start);
+    const allDates = filteredEvents.map(e => e.start);
     if (allDates.length === 0) return [];
     
-    const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
-    const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+    const validDates = allDates.filter(d => d.getTime() <= today.getTime());
+    if (validDates.length === 0) return [];
+    
+    const minDate = new Date(Math.min(...validDates.map(d => d.getTime())));
+    const maxDate = new Date(Math.min(today.getTime(), Math.max(...validDates.map(d => d.getTime()))));
     
     // Get the interval start for the first and last dates
     const firstIntervalStart = getIntervalStart(minDate, selectedInterval);

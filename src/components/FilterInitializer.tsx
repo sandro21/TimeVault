@@ -16,6 +16,8 @@ export function FilterInitializer({ events }: FilterInitializerProps) {
     if (events.length > 0) {
       const firstDate = getFirstEventDate(events);
       const lastDate = getLastEventDate(events);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999); // End of today
       
       // Always update if we have events and dates are not set, or if the new dates are more restrictive
       if (firstDate) {
@@ -23,10 +25,9 @@ export function FilterInitializer({ events }: FilterInitializerProps) {
           setMinDate(firstDate);
         }
       }
-      if (lastDate) {
-        if (!maxDate || lastDate > maxDate) {
-          setMaxDate(lastDate);
-        }
+      // maxDate should always be today (never show future dates)
+      if (!maxDate || maxDate > today) {
+        setMaxDate(today);
       }
     }
   }, [events, minDate, maxDate, setMinDate, setMaxDate]);

@@ -1,11 +1,19 @@
 "use client";
 
-import { Upload, Filter } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useFilter } from "@/contexts/FilterContext";
 import { ActivitySearch } from "@/components/ActivitySearch";
 import { useEvents } from "@/contexts/EventsContext";
+import { usePathname, useRouter } from "next/navigation";
 
 export function GlobalFilterBar() {
+  const pathname = usePathname();
+  const router = useRouter();
+  
+  // Hide filter bar on upload and process pages
+  if (pathname === "/upload" || pathname === "/process") {
+    return null;
+  }
   const {
     selectedFilter,
     setSelectedFilter,
@@ -17,7 +25,22 @@ export function GlobalFilterBar() {
     maxDate,
   } = useFilter();
 
-  const { events } = useEvents();
+  const { events, refreshEvents } = useEvents();
+
+  const handleClearData = () => {
+    if (typeof window !== 'undefined') {
+      // Clear all calendar-related data from localStorage
+      localStorage.removeItem('uploadedCalendars');
+      localStorage.removeItem('activityTitleMappings');
+      localStorage.removeItem('removedEventIds');
+      
+      // Refresh events context (will be empty now)
+      refreshEvents();
+      
+      // Navigate to upload page
+      router.push('/upload');
+    }
+  };
 
   const now = new Date();
   const currentYearValue = now.getFullYear();
@@ -119,14 +142,19 @@ export function GlobalFilterBar() {
 
   return (
     <div className="max-w-full h-[50px] flex items-start">
-      {/* Left: Icons */}
-      <div className="flex-1 flex items-start justify-start gap-2">
-        <div className="w-12 h-12 flex items-center justify-center cursor-pointer">
-          <Upload size={20} className="text-black" />
-        </div>
-        <div className="w-12 h-12 flex items-center justify-center cursor-pointer">
-          <Filter size={20} className="text-black" />
-        </div>
+      {/* Left: Clear Data Button */}
+      <div className="flex-1 flex items-start justify-start">
+        <button
+          onClick={handleClearData}
+          className="px-4 py-2 rounded-full text-body-24 font-medium cursor-pointer flex items-center gap-2"
+          style={{
+            backgroundColor: 'var(--red-1)',
+            color: 'white',
+          }}
+        >
+          <Trash2 size={18} />
+          Clear Data
+        </button>
       </div>
 
       {/* Center: Filter Options */}

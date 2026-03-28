@@ -29,9 +29,16 @@ export function ContributionsCalendar({ events }: ContributionsCalendarProps) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
+    // Filter out future events (cutoff at today)
+    const filteredEvents = events.filter(event => {
+      const eventDate = new Date(event.start);
+      eventDate.setHours(0, 0, 0, 0);
+      return eventDate <= today;
+    });
+    
     // Group events by day
     const eventsByDay = new Map<string, number>();
-    events.forEach((event) => {
+    filteredEvents.forEach((event) => {
       const dayString = event.dayString;
       eventsByDay.set(dayString, (eventsByDay.get(dayString) || 0) + 1);
     });
@@ -59,10 +66,10 @@ export function ContributionsCalendar({ events }: ContributionsCalendarProps) {
   }, [events]);
 
   return (
-    <div className="w-full">
+    <div className="w-full flex justify-center">
       <ActivityCalendar 
         data={calendarData}
-        blockSize={21}
+        blockSize={19}
         blockRadius={7}
         blockMargin={3}
         fontSize={15}
