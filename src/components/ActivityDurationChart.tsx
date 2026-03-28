@@ -15,8 +15,12 @@ import {
 import { formatAsCompactHoursMinutes } from "@/lib/calculations/stats";
 import { getPrimaryGradientColor } from "@/lib/colors";
 
+import type { DashboardViewMode } from "@/components/TimeLoggedChart";
+
 interface ActivityDurationChartProps {
   events: CalendarEvent[];
+  billingRates?: Record<string, number>;
+  viewMode?: DashboardViewMode;
 }
 
 const DURATION_RANGES = [
@@ -26,60 +30,59 @@ const DURATION_RANGES = [
   { label: "2h+", min: 120, max: Infinity },
 ];
 
-// Custom label component for bars
-const CustomLabel = ({ x, y, width, value }: any) => {
-  if (value === 0) return null;
-  return (
-    <text
-      x={x + width / 2}
-      y={y - 5}
-      fill="var(--primary)"
-      textAnchor="middle"
-      fontSize={12}
-      fontWeight={600}
-    >
-      {value}
-    </text>
-  );
-};
+export function ActivityDurationChart({ events, billingRates, viewMode = "time" }: ActivityDurationChartProps) {
+  const isRevenue = !!billingRates && viewMode === "revenue";
 
-export function ActivityDurationChart({ events }: ActivityDurationChartProps) {
   const chartData = useMemo(() => {
-    // Count activities in each duration range
     const rangeCounts = new Array(4).fill(0);
+    const rangeRevenue = new Array(4).fill(0);
 
     events.forEach((event) => {
       const duration = event.durationMinutes;
-      
-      if (duration >= 0 && duration < 30) {
-        rangeCounts[0]++;
-      } else if (duration >= 30 && duration < 60) {
-        rangeCounts[1]++;
-      } else if (duration >= 60 && duration < 120) {
-        rangeCounts[2]++;
-      } else if (duration >= 120) {
-        rangeCounts[3]++;
+      const rate = billingRates?.[event.title] ?? 0;
+      const rev = (duration / 60) * rate;
+      let idx = -1;
+      if (duration >= 0 && duration < 30) idx = 0;
+      else if (duration >= 30 && duration < 60) idx = 1;
+      else if (duration >= 60 && duration < 120) idx = 2;
+      else if (duration >= 120) idx = 3;
+      if (idx >= 0) {
+        rangeCounts[idx]++;
+        rangeRevenue[idx] += rev;
       }
     });
 
-    // Find max value for color normalization
-    const maxValue = Math.max(...rangeCounts, 1); // Avoid division by zero
+    const values = isRevenue
+      ? rangeCounts.map((c, i) => (c > 0 ? Math.round(rangeRevenue[i] / c) : 0))
+      : rangeCounts;
 
-    // Convert to chart data format with color based on value
-    return rangeCounts.map((count, index) => {
-      // Calculate color intensity (0 to 1) - higher values = darker
-      const intensity = maxValue > 0 ? count / maxValue : 0;
-      
-      // Use primary-based gradient (intensity 0 = lightest, 1 = darkest)
-      const color = getPrimaryGradientColor(intensity);
-      
+    const maxValue = Math.max(...values, 1);
+
+    return values.map((value, index) => {
+      const intensity = maxValue > 0 ? value / maxValue : 0;
       return {
         range: DURATION_RANGES[index].label,
-        count,
-        color,
+        count: value,
+        color: isRevenue ? `rgba(22, 163, 74, ${0.2 + intensity * 0.8})` : getPrimaryGradientColor(intensity),
       };
     });
-  }, [events]);
+  }, [events, isRevenue, billingRates]);
+
+  const CustomLabel = ({ x, y, width, value }: any) => {
+    if (value === 0) return null;
+    return (
+      <text
+        x={x + width / 2}
+        y={y - 5}
+        fill={isRevenue ? "#16a34a" : "var(--primary)"}
+        textAnchor="middle"
+        fontSize={12}
+        fontWeight={600}
+      >
+        {isRevenue ? `$${value}` : value}
+      </text>
+    );
+  };
 
   if (events.length === 0) {
     return (

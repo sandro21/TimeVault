@@ -33,6 +33,7 @@ export function GlobalFilterBar() {
     pathname === "/process" ||
     pathname === "/privacy" ||
     pathname === "/terms" ||
+    pathname === "/billing" ||
     pathname === "/calendar" ||
     pathname === "/chat"
   ) {
@@ -159,7 +160,7 @@ export function GlobalFilterBar() {
 
   /** Matches AppHeader `h-14` so the time filter sits below the main nav */
   const APP_HEADER_OFFSET = 56;
-  const maxTop = 90;
+  const maxTop = 30;
   const minTop = 10;
   const scrollThreshold = 100;
   const topPosition = Math.max(

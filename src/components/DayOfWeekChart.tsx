@@ -15,59 +15,61 @@ import {
 import { formatAsCompactHoursMinutes } from "@/lib/calculations/stats";
 import { getPrimaryGradientColor } from "@/lib/colors";
 
+import type { DashboardViewMode } from "@/components/TimeLoggedChart";
+
 interface DayOfWeekChartProps {
   events: CalendarEvent[];
+  billingRates?: Record<string, number>;
+  viewMode?: DashboardViewMode;
 }
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-// Custom label component for bars
-const CustomLabel = ({ x, y, width, value }: any) => {
-  if (value === 0) return null;
-  return (
-    <text
-      x={x + width / 2}
-      y={y - 5}
-      fill="var(--primary)"
-      textAnchor="middle"
-      fontSize={12}
-      fontWeight={600}
-    >
-      {formatAsCompactHoursMinutes(value)}
-    </text>
-  );
-};
+export function DayOfWeekChart({ events, billingRates, viewMode = "time" }: DayOfWeekChartProps) {
+  const isRevenue = !!billingRates && viewMode === "revenue";
 
-export function DayOfWeekChart({ events }: DayOfWeekChartProps) {
   const chartData = useMemo(() => {
-    // Initialize array for 7 days (Sunday=0 to Saturday=6)
     const dayTotals = new Array(7).fill(0);
 
-    // Sum up minutes for each day of the week
     events.forEach((event) => {
-      const dayOfWeek = event.dayOfWeek; // 0-6 (Sun-Sat)
-      dayTotals[dayOfWeek] += event.durationMinutes;
+      const dayOfWeek = event.dayOfWeek;
+      if (isRevenue) {
+        const rate = billingRates?.[event.title] ?? 0;
+        dayTotals[dayOfWeek] += (event.durationMinutes / 60) * rate;
+      } else {
+        dayTotals[dayOfWeek] += event.durationMinutes;
+      }
     });
 
-    // Find max value for color normalization
-    const maxValue = Math.max(...dayTotals, 1); // Avoid division by zero
+    const maxValue = Math.max(...dayTotals, 1);
 
-    // Convert to chart data format with color based on value
-    return dayTotals.map((minutes, index) => {
-      // Calculate color intensity (0 to 1) - higher values = darker
-      const intensity = maxValue > 0 ? minutes / maxValue : 0;
-      
-      // Use primary-based gradient (intensity 0 = lightest, 1 = darkest)
-      const color = getPrimaryGradientColor(intensity);
-      
+    return dayTotals.map((value, index) => {
+      const intensity = maxValue > 0 ? value / maxValue : 0;
+      const color = isRevenue ? getPrimaryGradientColor(intensity).replace("var(--primary)", "#16a34a") : getPrimaryGradientColor(intensity);
       return {
         day: DAY_NAMES[index],
         dayIndex: index,
-        minutes,
-        color,
+        minutes: value,
+        color: isRevenue ? `rgba(22, 163, 74, ${0.2 + intensity * 0.8})` : color,
       };
     });
-  }, [events]);
+  }, [events, isRevenue, billingRates]);
+
+  const CustomLabel = ({ x, y, width, value }: any) => {
+    if (value === 0) return null;
+    return (
+      <text
+        x={x + width / 2}
+        y={y - 5}
+        fill={isRevenue ? "#16a34a" : "var(--primary)"}
+        textAnchor="middle"
+        fontSize={12}
+        fontWeight={600}
+      >
+        {isRevenue ? `$${Math.round(value).toLocaleString()}` : formatAsCompactHoursMinutes(value)}
+      </text>
+    );
+  };
 
   if (events.length === 0) {
     return (
@@ -94,6 +96,7 @@ export function DayOfWeekChart({ events }: DayOfWeekChartProps) {
             stroke="var(--chart-axis)"
             style={{ fontSize: '12px' }}
             tickFormatter={(value) => {
+              if (isRevenue) return `$${Math.round(value).toLocaleString()}`;
               if (value >= 60) {
                 const hours = Math.floor(value / 60);
                 return `${hours}h`;

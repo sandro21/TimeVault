@@ -13,13 +13,17 @@ import {
 } from "recharts";
 import { formatAsCompactHoursMinutes } from "@/lib/calculations/stats";
 import { getChartColorValue, CHART_COLORS } from "@/lib/colors";
+import type { DashboardViewMode } from "@/components/TimeLoggedChart";
 
 interface TopActivitiesChartProps {
   events: CalendarEvent[];
   topActivities: Array<{ name: string; totalMinutes: number }>;
+  billingRates?: Record<string, number>;
+  viewMode?: DashboardViewMode;
 }
 
-export function TopActivitiesChart({ events, topActivities }: TopActivitiesChartProps) {
+export function TopActivitiesChart({ events, topActivities, billingRates, viewMode = "time" }: TopActivitiesChartProps) {
+  const isRevenue = !!billingRates && viewMode === "revenue";
   const [hoveredData, setHoveredData] = useState<Record<string, number> | null>(null);
   const [hoveredDataPoint, setHoveredDataPoint] = useState<Record<string, any> | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
@@ -136,7 +140,7 @@ export function TopActivitiesChart({ events, topActivities }: TopActivitiesChart
       eventsByActivity.set(activity.name, activityEvents);
     });
 
-    // For each activity, group by week
+    // For each activity, group by week (minutes or revenue)
     const activityWeekData = new Map<string, Map<string, number>>();
     topActivities.forEach((activity) => {
       const activityEvents = eventsByActivity.get(activity.name) || [];
@@ -144,8 +148,13 @@ export function TopActivitiesChart({ events, topActivities }: TopActivitiesChart
       
       activityEvents.forEach((event) => {
         const weekKey = getWeekKey(event.start);
-        const currentMinutes = weekData.get(weekKey) || 0;
-        weekData.set(weekKey, currentMinutes + event.durationMinutes);
+        const current = weekData.get(weekKey) || 0;
+        if (isRevenue) {
+          const rate = billingRates?.[event.title] ?? 0;
+          weekData.set(weekKey, current + (event.durationMinutes / 60) * rate);
+        } else {
+          weekData.set(weekKey, current + event.durationMinutes);
+        }
       });
       
       activityWeekData.set(activity.name, weekData);
@@ -175,7 +184,7 @@ export function TopActivitiesChart({ events, topActivities }: TopActivitiesChart
         monthYearLabel: `${monthShort}, ${yearFull}`, // Always show month/year
       };
 
-      // Add minutes for each activity
+      // Add values for each activity (minutes or revenue)
       topActivities.forEach((activity) => {
         const weekData = activityWeekData.get(activity.name);
         dataPoint[activity.name] = weekData?.get(weekKey) || 0;
@@ -186,7 +195,7 @@ export function TopActivitiesChart({ events, topActivities }: TopActivitiesChart
 
     console.log("TopActivitiesChart: Generated data points", data.length, data.slice(0, 3));
     return data;
-  }, [events, topActivities]);
+  }, [events, topActivities, isRevenue, billingRates]);
 
   // Calculate max value for Y-axis with nice round intervals
   const maxValue = useMemo(() => {
@@ -372,7 +381,7 @@ export function TopActivitiesChart({ events, topActivities }: TopActivitiesChart
             style={{ fontSize: '12px' }}
             domain={[0, maxValue]}
             tickFormatter={(value) => {
-              // Format to nice round numbers
+              if (isRevenue) return `$${Math.round(value).toLocaleString()}`;
               if (value >= 60) {
                 const hours = Math.floor(value / 60);
                 return `${hours}h`;
@@ -447,7 +456,9 @@ export function TopActivitiesChart({ events, topActivities }: TopActivitiesChart
                       </span>
                       {' - '}
                       <span style={{ color: itemColor }}>
-                        {formatAsCompactHoursMinutes(item.value)}
+                        {isRevenue
+                          ? `$${Math.round(item.value).toLocaleString()}`
+                          : formatAsCompactHoursMinutes(item.value)}
                       </span>
                     </div>
                   </div>

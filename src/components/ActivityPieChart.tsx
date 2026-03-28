@@ -12,25 +12,27 @@ interface PieChartData {
 
 interface ActivityPieChartProps {
   data: PieChartData[];
+  isRevenue?: boolean;
 }
 
-// Custom tooltip
-const CustomTooltip = ({ active, payload }: any) => {
-  if (active && payload && payload.length) {
-    const data = payload[0];
-    return (
-      <div className="bg-[color:var(--chart-tooltip-bg)] backdrop-blur-sm border border-[color:var(--chart-tooltip-border)] rounded-xl p-3 shadow-lg">
-        <p className="text-sm font-semibold text-[color:var(--text-primary)]">{data.name}</p>
-        <p className="text-sm text-[color:var(--primary)]">
-          {formatAsCompactHoursMinutes(data.value)}
-        </p>
-      </div>
-    );
-  }
-  return null;
-};
+export function ActivityPieChart({ data, isRevenue = false }: ActivityPieChartProps) {
 
-export function ActivityPieChart({ data }: ActivityPieChartProps) {
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const d = payload[0];
+      return (
+        <div className="bg-[color:var(--chart-tooltip-bg)] backdrop-blur-sm border border-[color:var(--chart-tooltip-border)] rounded-xl p-3 shadow-lg">
+          <p className="text-sm font-semibold text-[color:var(--text-primary)]">{d.name}</p>
+          <p className="text-sm" style={{ color: isRevenue ? "#16a34a" : "var(--primary)" }}>
+            {isRevenue
+              ? `$${Math.round(d.value).toLocaleString()}`
+              : formatAsCompactHoursMinutes(d.value)}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
   // Get chart colors from CSS variables
   const colors = useMemo(() => {
     return CHART_COLORS.map((_, index) => {

@@ -12,9 +12,12 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { formatAsCompactHoursMinutes } from "@/lib/calculations/stats";
+import type { DashboardViewMode } from "@/components/TimeLoggedChart";
 
 interface ActivityScatterLineChartProps {
   events: CalendarEvent[];
+  billingRates?: Record<string, number>;
+  viewMode?: DashboardViewMode;
 }
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -48,8 +51,13 @@ interface ScatterPoint {
   minutes: number;
 }
 
-export function ActivityScatterLineChart({ events }: ActivityScatterLineChartProps) {
+export function ActivityScatterLineChart({
+  events,
+  billingRates,
+  viewMode = "time",
+}: ActivityScatterLineChartProps) {
   const [clickedPoint, setClickedPoint] = useState<{ x: number; y: number; data: any } | null>(null);
+  const isRevenue = !!billingRates && viewMode === "revenue";
 
   const { lineData, scatterData, allDays, monthLabels } = useMemo(() => {
     // Filter out future events (cutoff at today)
@@ -120,7 +128,13 @@ export function ActivityScatterLineChart({ events }: ActivityScatterLineChartPro
         const weekEvents = eventsByWeek.get(weekKey) || [];
         
         // Calculate weekly average
-        const totalMinutes = weekEvents.reduce((sum, e) => sum + e.durationMinutes, 0);
+        const totalMinutes = weekEvents.reduce((sum, e) => {
+          if (isRevenue) {
+            const rate = billingRates?.[e.title] ?? 0;
+            return sum + (e.durationMinutes / 60) * rate;
+          }
+          return sum + e.durationMinutes;
+        }, 0);
         const averageMinutes = weekEvents.length > 0 ? totalMinutes / weekEvents.length : 0;
         
         const [year, month] = weekKey.split('-').map(Number);
@@ -137,11 +151,13 @@ export function ActivityScatterLineChart({ events }: ActivityScatterLineChartPro
     // Build scatter data: one entry per event (daily)
     const scatterData: ScatterPoint[] = filteredEvents.map((event) => ({
       date: getDayKey(event.start),
-      minutes: event.durationMinutes,
+      minutes: isRevenue
+        ? (event.durationMinutes / 60) * (billingRates?.[event.title] ?? 0)
+        : event.durationMinutes,
     }));
 
     return { lineData, scatterData, allDays: allDaysList, monthLabels: monthLabelsMap };
-  }, [events]);
+  }, [events, isRevenue, billingRates]);
 
   // Get indices where month labels exist
   const monthTickIndices = useMemo(() => {
@@ -232,13 +248,15 @@ export function ActivityScatterLineChart({ events }: ActivityScatterLineChartPro
           <YAxis
             stroke="var(--chart-axis)"
             style={{ fontSize: '12px' }}
-            tickFormatter={formatAsCompactHoursMinutes}
+            tickFormatter={(value) =>
+              isRevenue ? `$${Math.round(value).toLocaleString()}` : formatAsCompactHoursMinutes(value)
+            }
           />
           {/* Scatter first (rendered below) */}
           <Scatter
             dataKey="minutes"
             xAxisId={0}
-            fill="var(--primary)"
+            fill={isRevenue ? "#16a34a" : "var(--primary)"}
             fillOpacity={0.6}
             shape={(props: any) => {
               if (!props.cx || !props.cy || !props.payload || props.payload.minutes === null) {
@@ -249,7 +267,7 @@ export function ActivityScatterLineChart({ events }: ActivityScatterLineChartPro
                   cx={props.cx}
                   cy={props.cy}
                   r={2}
-                  fill="var(--primary)"
+                  fill={isRevenue ? "#16a34a" : "var(--primary)"}
                   fillOpacity={0.6}
                   style={{ cursor: 'pointer' }}
                   onClick={(e) => {
@@ -269,7 +287,7 @@ export function ActivityScatterLineChart({ events }: ActivityScatterLineChartPro
             type="monotone"
             dataKey="averageMinutes"
             xAxisId={0}
-            stroke="var(--primary)"
+            stroke={isRevenue ? "#16a34a" : "var(--primary)"}
             strokeWidth={2}
             dot={false}
             activeDot={false}
@@ -295,7 +313,9 @@ export function ActivityScatterLineChart({ events }: ActivityScatterLineChartPro
             })()}
           </p>
           <p className="text-sm text-[color:var(--primary)]">
-            {formatAsCompactHoursMinutes(clickedPoint.data.minutes)}
+            {isRevenue
+              ? `$${Math.round(clickedPoint.data.minutes).toLocaleString()}`
+              : formatAsCompactHoursMinutes(clickedPoint.data.minutes)}
           </p>
         </div>
       )}

@@ -5,6 +5,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { GlobalFilterBar } from "@/components/GlobalFilterBar";
 import { FilterProvider } from "@/contexts/FilterContext";
 import { EventsProvider } from "@/contexts/EventsContext";
+import { ProProvider } from "@/contexts/ProContext";
 import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -146,6 +147,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${urbanist.className} antialiased`} style={{ colorScheme: 'light', backgroundColor: 'var(--page-bg)' }} suppressHydrationWarning>
+        <ProProvider>
         <FilterProvider>
           <EventsProvider>
             <div className="flex min-h-dvh flex-col bg-[color:var(--page-bg)]">
@@ -170,6 +172,7 @@ export default function RootLayout({
             </div>
           </EventsProvider>
         </FilterProvider>
+        </ProProvider>
         <Analytics />
       </body>
     </html>

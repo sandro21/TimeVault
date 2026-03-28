@@ -15,9 +15,13 @@ import { formatAsCompactHoursMinutes } from "@/lib/calculations/stats";
 import { useFilter } from "@/contexts/FilterContext";
 import { ChevronDown } from "lucide-react";
 
+export type DashboardViewMode = "time" | "revenue";
+
 interface TimeLoggedChartProps {
   events: CalendarEvent[];
   title?: string;
+  billingRates?: Record<string, number>;
+  viewMode?: DashboardViewMode;
 }
 
 type IntervalType = "Daily" | "Every 4 days" | "Weekly" | "Monthly";
@@ -32,11 +36,13 @@ const formatMonth = (month: number): string => {
 interface ChartDataPoint {
   date: string;
   minutes: number;
+  revenue: number;
   dateObj: Date;
   monthLabel?: string;
 }
 
-export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedChartProps) {
+export function TimeLoggedChart({ events, title = "Time Logged", billingRates, viewMode = "time" }: TimeLoggedChartProps) {
+  const isRevenue = !!billingRates && viewMode === "revenue";
   const { selectedFilter, currentYear } = useFilter();
   
   // Determine available intervals based on filter type
@@ -147,12 +153,14 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
       return `${year}-${month}-${day}`;
     };
 
-    // Group by interval
+    // Group by interval (minutes + revenue)
     const eventsByInterval = new Map<string, number>();
+    const revenueByInterval = new Map<string, number>();
     filteredEvents.forEach((event) => {
       const intervalKey = getIntervalKey(event.start, effectiveInterval);
-      const currentMinutes = eventsByInterval.get(intervalKey) || 0;
-      eventsByInterval.set(intervalKey, currentMinutes + event.durationMinutes);
+      eventsByInterval.set(intervalKey, (eventsByInterval.get(intervalKey) || 0) + event.durationMinutes);
+      const rate = billingRates?.[event.title] ?? 0;
+      revenueByInterval.set(intervalKey, (revenueByInterval.get(intervalKey) || 0) + (event.durationMinutes / 60) * rate);
     });
 
     // Special handling for Year filter - show entire year for all intervals
@@ -210,12 +218,10 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
         const [year, month, day] = intervalKey.split('-').map(Number);
         const dateObj = new Date(year, month - 1, day);
         
-        // Determine label based on interval type
         let monthLabel = '';
         if (effectiveInterval === "Monthly") {
           monthLabel = formatMonth(month - 1);
         } else if (effectiveInterval === "Weekly") {
-          // Show month label for first week of month
           if (index === 0) {
             monthLabel = formatMonth(month - 1);
           } else {
@@ -226,12 +232,11 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
             }
           }
         } else if (effectiveInterval === "Daily") {
-          // Show month label for first day of month
           if (day === 1) {
             monthLabel = formatMonth(month - 1);
           } else if (index > 0) {
             const prevIntervalKey = allIntervals[index - 1];
-            const [prevYear, prevMonth, prevDay] = prevIntervalKey.split('-').map(Number);
+            const [prevYear, prevMonth] = prevIntervalKey.split('-').map(Number);
             if (prevMonth !== month || prevYear !== year) {
               monthLabel = formatMonth(month - 1);
             }
@@ -241,6 +246,7 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
         return {
           date: intervalKey,
           minutes: eventsByInterval.get(intervalKey) || 0,
+          revenue: revenueByInterval.get(intervalKey) || 0,
           dateObj,
           monthLabel,
         };
@@ -285,17 +291,14 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
       }
     }
     
-    // Create data points for all intervals, filling in missing ones with 0
     const data: ChartDataPoint[] = allIntervals.map((intervalKey, index) => {
       const [year, month, day] = intervalKey.split('-').map(Number);
       const dateObj = new Date(year, month - 1, day);
       
-      // Determine label based on interval type
       let monthLabel = '';
       if (effectiveInterval === "Monthly") {
         monthLabel = formatMonth(month - 1);
       } else if (effectiveInterval === "Weekly") {
-        // Show month label for first week of month
         if (index === 0) {
           monthLabel = formatMonth(month - 1);
         } else {
@@ -310,13 +313,14 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
       return {
         date: intervalKey,
         minutes: eventsByInterval.get(intervalKey) || 0,
+        revenue: revenueByInterval.get(intervalKey) || 0,
         dateObj,
         monthLabel,
       };
     });
 
     return data;
-  }, [events, effectiveInterval, selectedFilter, currentYear]);
+  }, [events, effectiveInterval, selectedFilter, currentYear, billingRates]);
 
   // Calculate number of unique months
   const uniqueMonths = useMemo(() => {
@@ -383,8 +387,10 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
           <p className="text-sm font-semibold text-[color:var(--text-primary)]">
             {getTooltipLabel()}
           </p>
-          <p className="text-sm text-[color:var(--primary)]">
-            {formatAsCompactHoursMinutes(data.minutes)}
+          <p className="text-sm" style={{ color: isRevenue ? "#16a34a" : "var(--primary)" }}>
+            {isRevenue
+              ? `$${Math.round(data.revenue).toLocaleString()}`
+              : formatAsCompactHoursMinutes(data.minutes)}
           </p>
         </div>
       );
@@ -402,8 +408,7 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
 
   return (
     <div className="w-full h-full min-h-[300px] flex flex-col">
-      {/* Title - Show on all screens, filter only on desktop */}
-      <div className="mb-2 md:mb-4 flex items-center justify-between px-3 md:px-6 flex-shrink-0 h-auto">
+      <div className="mb-2 md:mb-4 flex items-center justify-between px-3 md:px-6 flex-shrink-0 h-auto gap-2">
         <h3 className="text-card-title text-sm md:text-base">{title}</h3>
         {/* Interval Selector - Only show on desktop, hidden on mobile */}
         {!isMobile && (
@@ -485,10 +490,13 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
             stroke="var(--chart-axis)"
             style={{ fontSize: '12px' }}
             tickFormatter={(value) => {
+              if (isRevenue) {
+                return `$${Math.round(value).toLocaleString()}`;
+              }
               const hours = Math.floor(value / 60);
               return hours > 0 ? `${hours}h` : '0h';
             }}
-            width={40}
+            width={isRevenue ? 55 : 40}
             tick={{ fontSize: 12 }}
             axisLine={false}
           />
@@ -499,13 +507,13 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
           />
           <Area
             type="monotone"
-            dataKey="minutes"
-            stroke="var(--primary)"
-            fill="var(--primary)"
+            dataKey={isRevenue ? "revenue" : "minutes"}
+            stroke={isRevenue ? "#16a34a" : "var(--primary)"}
+            fill={isRevenue ? "#16a34a" : "var(--primary)"}
             fillOpacity={0.3}
             strokeWidth={2}
             dot={false}
-            activeDot={{ r: 5, fill: "var(--primary)" }}
+            activeDot={{ r: 5, fill: isRevenue ? "#16a34a" : "var(--primary)" }}
           />
           </AreaChart>
         </ResponsiveContainer>

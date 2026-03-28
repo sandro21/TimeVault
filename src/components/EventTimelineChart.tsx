@@ -5,8 +5,12 @@ import { useMemo } from "react";
 import { computeTopActivities } from "@/lib/calculations/stats";
 import { getChartColorValue, CHART_COLORS } from "@/lib/colors";
 
+import type { DashboardViewMode } from "@/components/TimeLoggedChart";
+
 interface EventTimelineChartProps {
   events: CalendarEvent[];
+  billingRates?: Record<string, number>;
+  viewMode?: DashboardViewMode;
 }
 
 interface TimelineBar {
@@ -27,7 +31,8 @@ interface MonthMarker {
   label: string;
 }
 
-export function EventTimelineChart({ events }: EventTimelineChartProps) {
+export function EventTimelineChart({ events, billingRates, viewMode = "time" }: EventTimelineChartProps) {
+  const isRevenue = !!billingRates && viewMode === "revenue";
   // Get chart colors from CSS variables
   const colors = useMemo(() => {
     return CHART_COLORS.slice(0, 10).map((_, index) => {
@@ -190,9 +195,14 @@ export function EventTimelineChart({ events }: EventTimelineChartProps) {
         });
       }
 
+      const rate = billingRates?.[activity.name] ?? 0;
+      const barColor = isRevenue
+        ? (rate > 0 ? "#16a34a" : "#d1d5db")
+        : colors[index % colors.length];
+
       bars.push({
         activityName: activity.name,
-        color: colors[index % colors.length],
+        color: barColor,
         segments,
       });
     });
@@ -202,7 +212,7 @@ export function EventTimelineChart({ events }: EventTimelineChartProps) {
       dateRange: { min: minDate, max: maxDate, total: totalRange },
       monthMarkers: markers,
     };
-  }, [events, colors]);
+  }, [events, colors, isRevenue, billingRates]);
 
   if (timelineData.length === 0 || !dateRange) {
     return (

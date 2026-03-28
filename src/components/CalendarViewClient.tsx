@@ -17,6 +17,7 @@ import type { CalendarEvent, EventKind } from "@/lib/calculations/stats";
 import { createCalendarEvent, ACTUAL_TIMER_CALENDAR_ID } from "@/lib/calculations/stats";
 import { computeEventHorizon } from "@/lib/calendar-horizon";
 import { rbcLocalizer } from "@/lib/rbc-localizer";
+import { getUniqueActivities, filterActivitiesBySearch } from "@/lib/calculations/get-activities";
 
 function toDateTimeLocalValue(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -125,6 +126,14 @@ export function CalendarViewClient() {
   );
   const [createEndLocal, setCreateEndLocal] = useState(() =>
     toDateTimeLocalValue(defaultCreateRange().end)
+  );
+
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const allActivities = useMemo(() => getUniqueActivities(events), [events]);
+  const suggestions = useMemo(
+    () => (createTitle.trim().length >= 1 ? filterActivitiesBySearch(allActivities, createTitle) : allActivities.slice(0, 8)),
+    [allActivities, createTitle]
   );
 
   const [liveModalOpen, setLiveModalOpen] = useState(false);
@@ -515,7 +524,7 @@ export function CalendarViewClient() {
         <div
           className="fixed inset-0 z-[170] flex items-center justify-center p-4"
           style={{ backgroundColor: "rgba(0, 0, 0, 0.12)", backdropFilter: "blur(6px)" }}
-          onClick={() => setCreateModalOpen(false)}
+          onClick={() => { setCreateModalOpen(false); setShowSuggestions(false); }}
           role="presentation"
         >
           <div
@@ -539,39 +548,68 @@ export function CalendarViewClient() {
             <p className="mt-1 text-sm text-[color:var(--text-secondary)]">
               Adds a block to your calendar (saved locally).
             </p>
-            <label className="mt-4 flex flex-col gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-              Title
-              <input
-                type="text"
-                value={createTitle}
-                onChange={(e) => setCreateTitle(e.target.value)}
-                placeholder="Meeting, focus time…"
-                className="rounded-xl border border-black/10 bg-white/90 px-3 py-2.5 text-[15px] outline-none focus:border-[color:var(--primary-30)]"
-              />
-            </label>
-            <label className="mt-3 flex flex-col gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-              Starts
-              <input
-                type="datetime-local"
-                value={createStartLocal}
-                onChange={(e) => setCreateStartLocal(e.target.value)}
-                className="rounded-xl border border-black/10 bg-white/90 px-3 py-2.5 text-[15px] outline-none focus:border-[color:var(--primary-30)]"
-              />
-            </label>
-            <label className="mt-3 flex flex-col gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-              Ends
-              <input
-                type="datetime-local"
-                value={createEndLocal}
-                onChange={(e) => setCreateEndLocal(e.target.value)}
-                className="rounded-xl border border-black/10 bg-white/90 px-3 py-2.5 text-[15px] outline-none focus:border-[color:var(--primary-30)]"
-              />
-            </label>
+
+            {/* Title with autocomplete */}
+            <div className="relative mt-4">
+              <label className="flex flex-col gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+                Title
+                <input
+                  type="text"
+                  value={createTitle}
+                  onChange={(e) => { setCreateTitle(e.target.value); setShowSuggestions(true); }}
+                  onFocus={() => setShowSuggestions(true)}
+                  placeholder="Meeting, focus time…"
+                  autoComplete="off"
+                  className="rounded-xl border border-black/10 bg-white/90 px-3 py-2.5 text-[15px] outline-none focus:border-[color:var(--primary-30)]"
+                />
+              </label>
+              {showSuggestions && suggestions.length > 0 && (
+                <div
+                  className="absolute left-0 right-0 top-full z-10 mt-1 max-h-[200px] overflow-y-auto rounded-xl border border-black/10 bg-white shadow-lg custom-scrollbar"
+                >
+                  {suggestions.map((s) => (
+                    <button
+                      key={s.name}
+                      type="button"
+                      onClick={() => { setCreateTitle(s.name); setShowSuggestions(false); }}
+                      className="flex w-full items-center justify-between px-3 py-2 text-left text-[15px] transition-colors hover:bg-[color:var(--primary-10)]"
+                    >
+                      <span className="truncate font-medium text-[color:var(--text-primary)]">{s.name}</span>
+                      <span className="ml-2 shrink-0 text-xs text-[color:var(--text-secondary)]">{s.count}x</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Start / End side by side */}
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <label className="flex flex-col gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+                Starts
+                <input
+                  type="datetime-local"
+                  value={createStartLocal}
+                  onChange={(e) => setCreateStartLocal(e.target.value)}
+                  className="rounded-xl border border-black/10 bg-white/90 px-3 py-2.5 text-[15px] outline-none focus:border-[color:var(--primary-30)]"
+                />
+              </label>
+              <label className="flex flex-col gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+                Ends
+                <input
+                  type="datetime-local"
+                  value={createEndLocal}
+                  onChange={(e) => setCreateEndLocal(e.target.value)}
+                  className="rounded-xl border border-black/10 bg-white/90 px-3 py-2.5 text-[15px] outline-none focus:border-[color:var(--primary-30)]"
+                />
+              </label>
+            </div>
+
             <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
               <button
                 type="button"
                 onClick={() => {
                   setCreateModalOpen(false);
+                  setShowSuggestions(false);
                   resetCreateForm();
                 }}
                 className="rounded-full border border-black/15 bg-white/80 px-5 py-2.5 text-[15px] font-semibold text-[color:var(--text-primary)]"

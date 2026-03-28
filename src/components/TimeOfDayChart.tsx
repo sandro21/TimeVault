@@ -5,37 +5,43 @@ import { useMemo, useState } from "react";
 import { formatAsCompactHoursMinutes } from "@/lib/calculations/stats";
 import { getPrimaryGradientColor } from "@/lib/colors";
 
+import type { DashboardViewMode } from "@/components/TimeLoggedChart";
+
 interface TimeOfDayChartProps {
   events: CalendarEvent[];
+  billingRates?: Record<string, number>;
+  viewMode?: DashboardViewMode;
 }
 
-export function TimeOfDayChart({ events }: TimeOfDayChartProps) {
+export function TimeOfDayChart({ events, billingRates, viewMode = "time" }: TimeOfDayChartProps) {
+  const isRevenue = !!billingRates && viewMode === "revenue";
   const [hoveredHour, setHoveredHour] = useState<number | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
 
   const chartData = useMemo(() => {
-    // Initialize array for 24 hours (0-23)
     const hourTotals = new Array(24).fill(0);
     const hourCounts = new Array(24).fill(0);
 
-    // Sum up minutes and count activities for each hour of the day
     events.forEach((event) => {
-      const hour = event.start.getHours(); // 0-23
-      hourTotals[hour] += event.durationMinutes;
+      const hour = event.start.getHours();
+      if (isRevenue) {
+        const rate = billingRates?.[event.title] ?? 0;
+        hourTotals[hour] += (event.durationMinutes / 60) * rate;
+      } else {
+        hourTotals[hour] += event.durationMinutes;
+      }
       hourCounts[hour] += 1;
     });
 
-    // Find max value for normalization
     const maxValue = Math.max(...hourTotals, 1);
 
-    // Convert to percentage (0-100) for visualization
-    return hourTotals.map((minutes, hour) => ({
+    return hourTotals.map((value, hour) => ({
       hour,
-      minutes,
+      minutes: value,
       count: hourCounts[hour],
-      intensity: (minutes / maxValue) * 100, // 0-100%
+      intensity: (value / maxValue) * 100,
     }));
-  }, [events]);
+  }, [events, isRevenue, billingRates]);
 
   const totalMinutes = useMemo(() => {
     return chartData.reduce((sum, entry) => sum + entry.minutes, 0);
@@ -61,11 +67,9 @@ export function TimeOfDayChart({ events }: TimeOfDayChartProps) {
     };
   };
 
-  // Get color based on intensity - primary-based gradient
   const getIntensityColor = (intensity: number) => {
-    // Convert intensity from 0-100 to 0-1 for gradient function
     const ratio = intensity / 100;
-    // Use primary-based gradient (ratio 0 = lightest, 1 = darkest)
+    if (isRevenue) return `rgba(22, 163, 74, ${0.15 + ratio * 0.85})`;
     return getPrimaryGradientColor(ratio);
   };
 
@@ -196,11 +200,10 @@ export function TimeOfDayChart({ events }: TimeOfDayChartProps) {
           
           return (
             <g key={i}>
-              {/* Segment outline (full segment) - red */}
               <path
                 d={createSegmentOutlinePath(data.hour, size, innerRadius, outerRadius)}
                 fill="none"
-                stroke="var(--primary)"
+                stroke={isRevenue ? "#16a34a" : "var(--primary)"}
                 strokeWidth="1"
               />
               {/* Filled portion based on intensity */}
@@ -237,7 +240,7 @@ export function TimeOfDayChart({ events }: TimeOfDayChartProps) {
           cy={size / 2}
           r={innerRadius}
           fill="var(--white)"
-          stroke="var(--primary)"
+          stroke={isRevenue ? "#16a34a" : "var(--primary)"}
           strokeWidth="2"
         />
 
@@ -278,18 +281,18 @@ export function TimeOfDayChart({ events }: TimeOfDayChartProps) {
               fill="var(--gray)"
               fontSize="11"
             >
-              Total
+              {isRevenue ? "Revenue" : "Total"}
             </text>
             <text
               x={size / 2}
               y={size / 2 + 8}
               textAnchor="middle"
               dominantBaseline="middle"
-              fill="var(--black)"
+              fill={isRevenue ? "#16a34a" : "var(--black)"}
               fontSize="14"
               fontWeight="600"
             >
-              {formatAsCompactHoursMinutes(totalMinutes)}
+              {isRevenue ? `$${Math.round(totalMinutes).toLocaleString()}` : formatAsCompactHoursMinutes(totalMinutes)}
             </text>
           </>
         )}
