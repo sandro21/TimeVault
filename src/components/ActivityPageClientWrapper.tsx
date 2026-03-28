@@ -14,7 +14,7 @@ export function ActivityPageClientWrapper({ searchString, searchType, timeFilter
   const { events } = useEvents();
 
   return (
-    <main className="mx-auto flex flex-col gap-12 px-18 py-12">
+    <main className="page-container">
       <FilterInitializer events={events} />
       <ActivityPageClient 
         events={events}

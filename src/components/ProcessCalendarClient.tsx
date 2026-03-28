@@ -51,7 +51,7 @@ export function ProcessCalendarClient({ events: contextEvents }: ProcessCalendar
         setProcessedEvents(events);
       } catch (error) {
         console.error("Error loading processing data:", error);
-        router.push("/upload");
+        router.push("/");
       }
     } else if (contextEvents.length > 0) {
       // Re-cleaning existing data
@@ -59,7 +59,7 @@ export function ProcessCalendarClient({ events: contextEvents }: ProcessCalendar
       setProcessedEvents(contextEvents);
     } else {
       // No data to process
-      router.push("/upload");
+      router.push("/");
     }
   }, [router, contextEvents]);
 

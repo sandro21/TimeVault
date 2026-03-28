@@ -12,6 +12,8 @@ import {
   formatAsCompactHoursMinutes,
 } from "@/lib/calculations/stats";
 import { filterEventsByTimeRange } from "@/lib/calculations/filter-events";
+import { filterHiddenEvents } from "@/lib/calculations/filter-hidden";
+import { useEvents } from "@/contexts/EventsContext";
 import { ActivityPieChart } from "@/components/ActivityPieChart";
 import { TimeLoggedChart } from "@/components/TimeLoggedChart";
 import { TopActivitiesChart } from "@/components/TopActivitiesChart";
@@ -19,6 +21,7 @@ import { DayOfWeekChart } from "@/components/DayOfWeekChart";
 import { ActivityDurationChart } from "@/components/ActivityDurationChart";
 import { TimeOfDayChart } from "@/components/TimeOfDayChart";
 import { EventTimelineChart } from "@/components/EventTimelineChart";
+import { ActivityBreadcrumbSearchWrapper } from "@/components/ActivityBreadcrumbSearchWrapper";
 
 interface DashboardClientProps {
   events: CalendarEvent[];
@@ -33,9 +36,8 @@ export function DashboardClient({ events }: DashboardClientProps) {
     minDate,
     maxDate,
   } = useFilter();
-
   // Filter events by time range
-  const filteredEvents = filterEventsByTimeRange(
+  const timeFilteredEvents = filterEventsByTimeRange(
     events,
     selectedFilter,
     currentYear,
@@ -43,6 +45,12 @@ export function DashboardClient({ events }: DashboardClientProps) {
     minDate,
     maxDate
   );
+  
+  // Filter out hidden activities/issues for statistics
+  const filteredEvents = filterHiddenEvents(timeFilteredEvents);
+  
+  // Use all events (not filtered by hidden) for the breadcrumb search
+  const allEventsForSearch = timeFilteredEvents;
 
   const stats = computeGlobalStats(filteredEvents);
   const topActivities = computeTopActivities(filteredEvents, "time", 10);
@@ -67,10 +75,56 @@ export function DashboardClient({ events }: DashboardClientProps) {
 
   return (
     <>
-      {/* All Loging Details Class */}
-      <section className="space-y-[60px]">
+      {/* Activity Breadcrumb Search */}
+      <ActivityBreadcrumbSearchWrapper events={allEventsForSearch} />
+
+      {/* All Sections Grouped */}
+      <div className="sections-container">
+        {/* All Logging Details - NO TITLE */}
+        <section>
+          {/* grid of cards */}
+          <div className="grid grid-cols-[200px_200px_1fr] auto-rows-[200px] gap-3">
+            {/* Total Activities */}
+            <div className="card-soft flex flex-col items-center justify-center text-center px-6">
+              <h3 className="text-card-title">Total Activities</h3>
+              <div className="mt-4 text-number-large text-[color:var(--primary)]">
+                {stats.totalCount}
+              </div>
+            </div>
+
+            {/* Different Activities */}
+            <div className="card-soft flex flex-col items-center justify-center text-center px-6">
+              <h3 className="text-card-title">Different Activities</h3>
+              <div className="mt-4 text-number-large text-[color:var(--primary)]">
+                {stats.uniqueActivities}
+              </div>
+            </div>
+
+            {/* Right big card – Logging Progress Chart */}
+            <div className="card-soft row-span-2 flex flex-col px-8 py-6 text-left">
+              <div className="flex-1 min-h-0 w-full">
+                <TimeLoggedChart events={filteredEvents} title="Logging Progress" />
+              </div>
+            </div>
+
+            {/* Time Logged */}
+            <div className="card-soft col-span-2 flex flex-col items-center justify-center text-center px-8">
+              <h3 className="text-card-title mb-2">Time Logged</h3>
+              <p className="text-body-24 text-[color:var(--primary)]">
+                {timeDaysHoursMinutes}
+              </p>
+              <p className="text-body-24 text-[color:var(--primary)]">
+                {timeHoursMinutes}
+              </p>
+              <p className="text-body-24 text-[color:var(--text-primary)]">
+                {timeMinutes}
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* Top Activities */}
-        <section className="space-y-[40px]">
+        <section>
           {/* header */}
           <h2 className="text-section-header text-[color:var(--text-primary)] mb-4">
             Top Activities
@@ -157,55 +211,8 @@ export function DashboardClient({ events }: DashboardClientProps) {
           </div>
         </section>
 
-        <section className="space-y-[40px]">
-          {/* header */}
-          <h2 className="text-section-header text-[color:var(--text-primary)] mb-4">
-            All Logging Details
-          </h2>
-
-          {/* grid of cards */}
-          <div className="grid grid-cols-[200px_200px_1fr] auto-rows-[200px] gap-3">
-            {/* Total Activities */}
-            <div className="card-soft flex flex-col items-center justify-center text-center px-6">
-              <h3 className="text-card-title text-[color:var(--text-primary)]">Total Activities</h3>
-              <div className="mt-4 text-number-large text-[color:var(--primary)]">
-                {stats.totalCount}
-              </div>
-            </div>
-
-            {/* Different Activities */}
-            <div className="card-soft flex flex-col items-center justify-center text-center px-6">
-              <h3 className="text-card-title text-[color:var(--text-primary)]">Different Activities</h3>
-              <div className="mt-4 text-number-large text-[color:var(--primary)]">
-                {stats.uniqueActivities}
-              </div>
-            </div>
-
-            {/* Right big card – Logging Progress Chart */}
-            <div className="card-soft row-span-2 flex flex-col px-8 py-6 text-left">
-              <div className="flex-1 min-h-0 w-full">
-                <TimeLoggedChart events={filteredEvents} title="Logging Progress" />
-              </div>
-            </div>
-
-            {/* Time Logged */}
-            <div className="card-soft col-span-2 flex flex-col items-center justify-center text-center px-8">
-              <h3 className="text-card-title text-[color:var(--text-primary)] mb-2">Time Logged</h3>
-              <p className="text-body-24 text-[color:var(--primary)]">
-                {timeDaysHoursMinutes}
-              </p>
-              <p className="text-body-24 text-[color:var(--primary)]">
-                {timeHoursMinutes}
-              </p>
-              <p className="text-body-24 text-[color:var(--text-primary)]">
-                {timeMinutes}
-              </p>
-            </div>
-          </div>
-        </section>
-
         {/* Habits */}
-        <section className="space-y-[40px]">
+        <section>
           {/* header */}
           <h2 className="text-section-header text-[color:var(--text-primary)] mb-4">
             Habits
@@ -240,7 +247,7 @@ export function DashboardClient({ events }: DashboardClientProps) {
         </section>
 
         {/* Event Timeline */}
-        <section className="space-y-[40px]">
+        <section>
           <h2 className="text-section-header text-[color:var(--text-primary)] mb-4">
             Event Timeline
           </h2>
@@ -250,7 +257,7 @@ export function DashboardClient({ events }: DashboardClientProps) {
             </div>
           </div>
         </section>
-      </section>
+      </div>
     </>
   );
 }

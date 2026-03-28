@@ -8,7 +8,7 @@ export function AllActivityPageClient() {
   const { events } = useEvents();
 
   return (
-    <main className="flex-col gap-18 px-18 py-12">
+    <main className="page-container">
       <FilterInitializer events={events} />
       <DashboardClient events={events} />
     </main>

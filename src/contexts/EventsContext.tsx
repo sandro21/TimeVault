@@ -7,6 +7,8 @@ import { parseIcsToEventsBrowser } from "@/lib/calculations/parse-ics-browser";
 interface EventsContextType {
   events: CalendarEvent[];
   refreshEvents: () => void;
+  hiddenStateVersion: number; // Increment this to trigger re-renders when hidden state changes
+  refreshHiddenState: () => void; // Call this when hidden state is saved
 }
 
 const EventsContext = createContext<EventsContextType | undefined>(undefined);
@@ -17,6 +19,7 @@ export function EventsProvider({
   children: ReactNode;
 }) {
   const [uploadedEvents, setUploadedEvents] = useState<CalendarEvent[]>([]);
+  const [hiddenStateVersion, setHiddenStateVersion] = useState(0);
 
   const loadUploadedCalendars = () => {
     if (typeof window === 'undefined') return [];
@@ -31,10 +34,17 @@ export function EventsProvider({
       // Load removed event IDs
       const removedEventIds = new Set(JSON.parse(localStorage.getItem('removedEventIds') || '[]'));
       
+      // Load hidden calendar IDs
+      const hiddenCalendarIds = new Set(JSON.parse(localStorage.getItem('hiddenCalendarIds') || '[]'));
+      
       // Load Google Calendar events stored separately
       const googleEvents = JSON.parse(localStorage.getItem('googleCalendarEvents') || '{}');
       
       for (const calendar of storedCalendars) {
+        // Skip hidden calendars
+        if (hiddenCalendarIds.has(calendar.id)) {
+          continue;
+        }
         let events: CalendarEvent[] = [];
         
         // Check if this is a Google calendar
@@ -86,8 +96,12 @@ export function EventsProvider({
     setUploadedEvents(loaded);
   };
 
+  const refreshHiddenState = () => {
+    setHiddenStateVersion(prev => prev + 1);
+  };
+
   return (
-    <EventsContext.Provider value={{ events: uploadedEvents, refreshEvents }}>
+    <EventsContext.Provider value={{ events: uploadedEvents, refreshEvents, hiddenStateVersion, refreshHiddenState }}>
       {children}
     </EventsContext.Provider>
   );

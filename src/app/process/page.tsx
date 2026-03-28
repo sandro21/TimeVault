@@ -1,15 +1,16 @@
 "use client";
 
-import { ProcessCalendarClient } from "@/components/ProcessCalendarClient";
-import { useEvents } from "@/contexts/EventsContext";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function ProcessPage() {
-  const { events } = useEvents();
+  const router = useRouter();
   
-  return (
-    <main className="min-h-screen px-18 py-12">
-      <ProcessCalendarClient events={events} />
-    </main>
-  );
+  // Redirect to all-activity page (old process flow is replaced by Manage and Filter modal)
+  useEffect(() => {
+    router.replace('/all-activity');
+  }, [router]);
+  
+  return null;
 }
 

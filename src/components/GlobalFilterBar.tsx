@@ -1,20 +1,22 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Trash2, SlidersHorizontal } from "lucide-react";
 import { useFilter } from "@/contexts/FilterContext";
-import { ActivitySearchWrapper } from "@/components/ActivitySearchWrapper";
+// import { ActivitySearchWrapper } from "@/components/ActivitySearchWrapper";
 import { useEvents } from "@/contexts/EventsContext";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { ManageFilterModal } from "@/components/ManageFilterModal";
 
 export function GlobalFilterBar() {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [scrollY, setScrollY] = useState(0);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   
-  // Hide filter bar on upload, process, privacy, and terms pages
-  if (pathname === "/upload" || pathname === "/process" || pathname === "/privacy" || pathname === "/terms") {
-    return null;
-  }
-  const {//love
+  // Call all hooks before any early returns (Rules of Hooks)
+  const {
     selectedFilter,
     setSelectedFilter,
     currentYear,
@@ -27,6 +29,21 @@ export function GlobalFilterBar() {
 
   const { events, refreshEvents } = useEvents();
 
+  // Track scroll position
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+  
+  // Hide filter bar on home, process, privacy, and terms pages
+  if (pathname === "/" || pathname === "/process" || pathname === "/privacy" || pathname === "/terms") {
+    return null;
+  }
+
   const handleClearData = () => {
     if (typeof window !== 'undefined') {
       // Clear all calendar-related data from localStorage
@@ -38,8 +55,8 @@ export function GlobalFilterBar() {
       // Refresh events context (will be empty now)
       refreshEvents();
       
-      // Navigate to upload page
-      router.push('/upload');
+      // Navigate to home page
+      router.push('/');
     }
   };
 
@@ -141,107 +158,119 @@ export function GlobalFilterBar() {
     return false;
   };
 
-  const handleCleanData = () => {
-    // Load existing events and go to processing page
-    router.push('/process');
-  };
+
+  // Calculate top position based on scroll
+  // Starts at 80px (top-20), moves to 10px as we scroll
+  const maxTop = 90;
+  const minTop = 10;
+  const scrollThreshold = 100;
+  const topPosition = Math.max(minTop, maxTop - (scrollY / scrollThreshold) * (maxTop - minTop));
+
 
   return (
-    <div className="max-w-full h-[50px] flex items-start">
-      {/* Left: Clear Data & Clean Data Buttons */}
-      <div className="flex-1 flex items-start justify-start gap-3">
-        <button
-          onClick={handleClearData}
-          className="px-4 py-2 rounded-full text-body-24 font-medium cursor-pointer flex items-center gap-2"
-          style={{
-            backgroundColor: 'var(--primary)',
-            color: 'white',
-          }}
-        >
-          <Trash2 size={18} />
-          Clear Data
-        </button>
-        <button
-          onClick={handleCleanData}
-          className="px-4 py-2 rounded-full text-body-24 font-medium cursor-pointer flex items-center gap-2 bg-[color:var(--bg-white)] border-2"
-          style={{
-            borderColor: 'var(--primary)',
-            color: 'var(--primary)',
-          }}
-        >
-          Clean Data
-        </button>
-      </div>
-
-      {/* Center: Filter Options */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-1">
-        {/* Big capsule with filter options */}
-        <div 
-          className="px-1 py-1 flex flex-row items-center gap-1"
-          style={{
-            borderRadius: 'var(--card-radius-lg)',
-            background: 'var(--card-bg)',
-            boxShadow: 'var(--card-shadow)',
-            backdropFilter: 'blur(var(--card-backdrop-blur))',
-          }}
-        >
-          {(["Month", "Year", "LifeTime"] as const).map((filter) => (
-            <button
-              key={filter}
-              onClick={() => setSelectedFilter(filter)}
-              className={`px-4 py-2 rounded-full text-body-24 whitespace-nowrap cursor-pointer ${
-                selectedFilter === filter 
-                  ? "font-bold text-[color:var(--text-primary)]" 
-                  : "font-normal text-[color:var(--text-primary)] bg-[color:var(--bg-white)]"
-              }`}
-              style={
-                selectedFilter === filter
-                  ? { backgroundColor: 'var(--primary-20)' }
-                  : undefined
-              }
-            >
-              {filter}
-            </button>
-          ))}
+    <div className="w-full">
+      {/* Header Bar - Not Sticky */}
+      <div 
+        className="w-full flex flex-row items-center justify-between px-6 py-3"
+        style={{
+          background: 'var(--card-bg)',
+          backdropFilter: 'blur(var(--card-backdrop-blur))',
+        }}
+      >
+        {/* Left: Logo */}
+        <div className="flex items-center">
+          <img src="/blacklogo.png" alt="myCalendarStats" className="h-10" />
         </div>
 
-        {/* Year/Month Navigation (only shows for Month and Year) */}
-        {(selectedFilter === "Month" || selectedFilter === "Year") && (
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => selectedFilter === "Month" ? handleMonthChange(-1) : handleYearChange(-1)}
-              disabled={!canGoBack()}
-              className={`text-body-24 cursor-pointer ${
-                canGoBack() ? "text-[color:var(--primary)]" : "text-[color:var(--text-secondary)] cursor-not-allowed opacity-50"
-              }`}
-            >
-              ←
-            </button>
-            <div className="bg-[color:var(--bg-white)] px-4 py-2 rounded-full" style={{ width: '15ch', minWidth: '10ch', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span className="text-body-24 font-bold text-[color:var(--primary)] whitespace-nowrap">
-                {selectedFilter === "Month" 
-                  ? `${monthNames[currentMonth]} ${currentYear}`
-                  : currentYear
-                }
-              </span>
-            </div>
-            <button
-              onClick={() => selectedFilter === "Month" ? handleMonthChange(1) : handleYearChange(1)}
-              disabled={!canGoForward()}
-              className={`text-body-24 cursor-pointer ${
-                canGoForward() ? "text-[color:var(--primary)]" : "text-[color:var(--text-secondary)] cursor-not-allowed opacity-50"
-              }`}
-            >
-              →
-            </button>
-          </div>
-        )}
+        {/* Right: Navigation Buttons */}
+        <div className="flex flex-row items-center gap-2">
+        <button
+          className="header-nav-button text-body-24 text-[color:var(--text-primary)] px-4 py-1 flex items-center gap-2"
+          onClick={() => setIsFilterModalOpen(true)}
+        >
+          <SlidersHorizontal size={20} />
+          Manage and Filter
+        </button>
+          <button
+            className="header-delete-button flex items-center justify-center p-2"
+            onClick={handleClearData}
+          >
+            <Trash2 size={24} className="text-white" />
+          </button>
+        </div>
       </div>
 
-      {/* Right: Search Activity */}
-      <div className="flex-1 flex items-start justify-end">
-        <ActivitySearchWrapper events={events} />
+      {/* Time Filter Component - Centered and Fixed */}
+      <div 
+        className="w-full flex justify-center fixed left-0 right-0 z-40 pointer-events-none transition-all duration-200 ease-out"
+        style={{ top: `${topPosition}px` }}
+      >
+        <div className="flex flex-col items-center justify-center gap-1 pointer-events-auto">
+          {/* Combined capsule with filter options and navigation */}
+          <div 
+            className="px-1 py-1 flex flex-row items-center gap-1 bg-[color:var(--bg-white)] rounded-full"
+            style={{
+              boxShadow: 'var(--card-shadow)',
+            }}
+          >
+            {(["Month", "Year", "LifeTime"] as const).map((filter) => (
+              <button
+                key={filter}
+                onClick={() => setSelectedFilter(filter)}
+                className={`px-4 py-2 rounded-full text-body-24 whitespace-nowrap cursor-pointer ${
+                  selectedFilter === filter 
+                    ? "font-bold text-[color:var(--text-primary)]" 
+                    : "font-normal text-[color:var(--text-primary)]"
+                }`}
+                style={
+                  selectedFilter === filter
+                    ? { backgroundColor: 'var(--primary-20)' }
+                    : undefined
+                }
+              >
+                {filter}
+              </button>
+            ))}
+
+            {/* Year/Month Navigation (only shows for Month and Year) */}
+            {(selectedFilter === "Month" || selectedFilter === "Year") && (
+              <>
+                <div className="h-8 w-px bg-[color:var(--text-secondary)] opacity-20 mx-1"></div>
+                <button
+                  onClick={() => selectedFilter === "Month" ? handleMonthChange(-1) : handleYearChange(-1)}
+                  disabled={!canGoBack()}
+                  className={`text-body-24 cursor-pointer px-2 ${
+                    canGoBack() ? "text-[color:var(--primary)]" : "text-[color:var(--text-secondary)] cursor-not-allowed opacity-50"
+                  }`}
+                >
+                  ←
+                </button>
+                <span className="text-body-24 font-bold text-[color:var(--primary)] whitespace-nowrap px-2">
+                  {selectedFilter === "Month" 
+                    ? `${monthNames[currentMonth]} ${currentYear}`
+                    : currentYear
+                  }
+                </span>
+                <button
+                  onClick={() => selectedFilter === "Month" ? handleMonthChange(1) : handleYearChange(1)}
+                  disabled={!canGoForward()}
+                  className={`text-body-24 cursor-pointer px-2 ${
+                    canGoForward() ? "text-[color:var(--primary)]" : "text-[color:var(--text-secondary)] cursor-not-allowed opacity-50"
+                  }`}
+                >
+                  →
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* Manage Filter Modal */}
+      <ManageFilterModal 
+        isOpen={isFilterModalOpen} 
+        onClose={() => setIsFilterModalOpen(false)} 
+      />
     </div>
   );
 }

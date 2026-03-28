@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Urbanist } from "next/font/google";
 import "./globals.css";
 import { GlobalFilterBar } from "@/components/GlobalFilterBar";
+import { Suspense } from "react";
 import { Footer } from "@/components/Footer";
 import { FilterProvider } from "@/contexts/FilterContext";
 import { EventsProvider } from "@/contexts/EventsContext";
@@ -65,10 +66,15 @@ export default function RootLayout({
         <FilterProvider>
           <EventsProvider>
             <div className="min-h-screen bg-[color:var(--page-bg)] bg-blobs flex flex-col">
-              <div className="mx-auto px-18 py-12">
+              {/* Additional background blobs */}
+              <div className="bg-blob-1"></div>
+              <div className="bg-blob-2"></div>
+              <div className="bg-blob-3"></div>
+              
+              <Suspense fallback={null}>
                 <GlobalFilterBar />
-              </div>
-              <div className="flex-1">
+              </Suspense>
+              <div className="flex-1" style={{ position: 'relative', zIndex: 1 }}>
                 {children}
               </div>
               <Footer />
