@@ -142,19 +142,6 @@ export function ProcessCalendarClient({ events: contextEvents }: ProcessCalendar
       storedCalendars.push(...newCalendars);
       localStorage.setItem('uploadedCalendars', JSON.stringify(storedCalendars));
 
-      // For Google calendars, store events separately
-      const googleEvents = JSON.parse(localStorage.getItem('googleCalendarEvents') || '{}');
-      newCalendars.forEach((calendar: any) => {
-        if (calendar.source === 'google') {
-          // Store events for this Google calendar
-          const calendarEvents = originalEvents.filter(
-            (event) => event.calendarId === calendar.id
-          );
-          googleEvents[calendar.id] = calendarEvents;
-        }
-      });
-      localStorage.setItem('googleCalendarEvents', JSON.stringify(googleEvents));
-
       // Clear session storage
       sessionStorage.removeItem('processingCalendars');
       sessionStorage.removeItem('uploadErrors');
@@ -188,19 +175,6 @@ export function ProcessCalendarClient({ events: contextEvents }: ProcessCalendar
       const storedCalendars = JSON.parse(localStorage.getItem('uploadedCalendars') || '[]');
       storedCalendars.push(...newCalendars);
       localStorage.setItem('uploadedCalendars', JSON.stringify(storedCalendars));
-
-      // For Google calendars, store processed events separately
-      const googleEvents = JSON.parse(localStorage.getItem('googleCalendarEvents') || '{}');
-      newCalendars.forEach((calendar: any) => {
-        if (calendar.source === 'google') {
-          // Store PROCESSED events for this Google calendar
-          const calendarEvents = processedEvents.filter(
-            (event) => event.calendarId === calendar.id
-          );
-          googleEvents[calendar.id] = calendarEvents;
-        }
-      });
-      localStorage.setItem('googleCalendarEvents', JSON.stringify(googleEvents));
 
       // Build title mappings (original -> processed)
       const titleMappings: Record<string, string> = {};

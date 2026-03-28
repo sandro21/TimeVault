@@ -22,44 +22,40 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-2xl font-semibold text-[color:var(--text-primary)] mb-3">1. Data Access & Collection</h2>
           <p className="text-base leading-relaxed">
-            MyCalendarStats accesses your Google Calendar data (specifically events) via the Google Calendar API. 
-            We access this data strictly to generate statistical charts and insights for you within the application.
+            MyCalendarStats runs entirely in your web browser. Calendar data comes from iCal (.ics) files you choose
+            to load or from demo data you generate in the app. We do not collect calendar data on our servers.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-semibold text-[color:var(--text-primary)] mb-3">2. Limited Use Disclosure</h2>
+          <h2 className="text-2xl font-semibold text-[color:var(--text-primary)] mb-3">2. Data Storage</h2>
           <p className="text-base leading-relaxed">
-            MyCalendarStats' use and transfer to any other app of information received from Google APIs will adhere 
-            to the Google API Services User Data Policy, including the Limited Use requirements.
+            Data you process is stored locally in your browser (for example in localStorage) so the app can show
+            statistics and charts. All processing is client-side. We do not store your calendar data on our servers.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-semibold text-[color:var(--text-primary)] mb-3">3. Data Storage</h2>
+          <h2 className="text-2xl font-semibold text-[color:var(--text-primary)] mb-3">3. Data Sharing</h2>
           <p className="text-base leading-relaxed">
-            Google Calendar data is stored locally in your browser's localStorage for the purpose of generating statistics and insights. All processing is done client-side in your browser. We do not store your calendar data on our servers.
+            We do not sell or share your calendar data with third parties. Data you load stays on your device unless
+            you export or copy it yourself.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-semibold text-[color:var(--text-primary)] mb-3">4. Data Sharing, Transfer, and Disclosure</h2>
+          <h2 className="text-2xl font-semibold text-[color:var(--text-primary)] mb-3">4. Data Protection</h2>
           <p className="text-base leading-relaxed">
-            We do not share, transfer, or disclose your Google user data to any third parties. All Google Calendar data remains on your device and is never transmitted to external servers or shared with other parties.
+            Local browser storage is subject to your browser&apos;s security model. Clear site data in your browser
+            to remove stored information for this app.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-semibold text-[color:var(--text-primary)] mb-3">5. Data Protection Mechanisms</h2>
+          <h2 className="text-2xl font-semibold text-[color:var(--text-primary)] mb-3">5. Data Retention</h2>
           <p className="text-base leading-relaxed">
-            Your Google Calendar data is protected through client-side storage in your browser's localStorage, which is subject to your browser's built-in security mechanisms. Data is encrypted in transit when accessing the Google Calendar API using HTTPS. All data processing occurs locally on your device and is never transmitted to our servers.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-2xl font-semibold text-[color:var(--text-primary)] mb-3">6. Data Retention and Deletion</h2>
-          <p className="text-base leading-relaxed">
-            Google Calendar data is stored in your browser's localStorage and will persist until you clear your browser's local storage data. You can delete your Google Calendar data at any time by clearing your browser's localStorage for this application. We do not retain any copies of your Google Calendar data on our servers, and all data is automatically removed when you clear your browser storage.
+            Stored data persists until you clear it using the app controls or your browser&apos;s settings. We do not
+            retain copies on our servers.
           </p>
         </section>
       </div>
@@ -70,4 +66,3 @@ export default function PrivacyPage() {
     </main>
   );
 }
-

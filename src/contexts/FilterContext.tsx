@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 
 export type FilterType = "Month" | "Year" | "LifeTime";
 
@@ -12,9 +20,9 @@ interface FilterContextType {
   currentMonth: number; // 0-11 (0 = January, 11 = December)
   setCurrentMonth: (month: number) => void;
   minDate: Date | null;
-  setMinDate: (date: Date | null) => void;
+  setMinDate: Dispatch<SetStateAction<Date | null>>;
   maxDate: Date | null;
-  setMaxDate: (date: Date | null) => void;
+  setMaxDate: Dispatch<SetStateAction<Date | null>>;
 }
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined);

@@ -2,6 +2,12 @@
 // Core Types
 // ============================================================================
 
+/** ICS / imported schedule vs timer-recorded reality */
+export type EventKind = "planned" | "actual";
+
+/** calendarId for events created by the live timer (local only) */
+export const ACTUAL_TIMER_CALENDAR_ID = "actual";
+
 export interface CalendarEvent {
   id: string;
   calendarId: string; // which .ics file / source it came from
@@ -14,6 +20,8 @@ export interface CalendarEvent {
   dayOfWeek: number; // 0–6 (Sun–Sat)
   dayString: string; // "YYYY-MM-DD"
   isAllDay: boolean;
+  /** planned = from ICS; actual = timer recording */
+  kind?: EventKind;
 }
 
 //initial before derifving durationMinutes, daysOfWeek, dayString, isAllDay
@@ -24,6 +32,7 @@ export interface CreateCalendarEventInput {
   start: Date;
   end: Date;
   isAllDay?: boolean; // optional; default false
+  kind?: EventKind;
 }
 
 // ============================================================================
@@ -33,7 +42,7 @@ export interface CreateCalendarEventInput {
 export function createCalendarEvent(
   input: CreateCalendarEventInput
 ): CalendarEvent {
-  const { id, calendarId, title, start, end, isAllDay = false } = input;
+  const { id, calendarId, title, start, end, isAllDay = false, kind = "planned" } = input;
 
   const durationMs = end.getTime() - start.getTime();
   const durationMinutes = Math.round(durationMs / (1000 * 60)); // ms -> minutes
@@ -55,6 +64,7 @@ export function createCalendarEvent(
     dayOfWeek,
     dayString,
     isAllDay,
+    kind,
   };
 }
 

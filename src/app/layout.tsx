@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { Urbanist } from "next/font/google";
 import "./globals.css";
+import { AppHeader } from "@/components/AppHeader";
 import { GlobalFilterBar } from "@/components/GlobalFilterBar";
-import { Footer } from "@/components/Footer";
 import { FilterProvider } from "@/contexts/FilterContext";
 import { EventsProvider } from "@/contexts/EventsContext";
 import { Suspense } from "react";
+import { Analytics } from "@vercel/analytics/next";
 
 const urbanist = Urbanist({
   subsets: ["latin"],
@@ -14,8 +15,8 @@ const urbanist = Urbanist({
 
 export const metadata: Metadata = {
   title: "MyCalendarStats - Calendar Analytics & Time Tracking Tool",
-  description: "Analyze your Google Calendar and iCal data with powerful insights. Track time spent, discover activity patterns, and visualize your schedule with interactive charts.",
-  keywords: ["calendar stats", "calendar statistics", "iCal stats", "ical analyzer", "iCal trends", "calendar analytics", "Google Calendar stats", "iCal statistics", "calendar insights", "calendar data analysis", "calendar dashboard", "time tracking", "time analysis", "calendar metrics", "schedule analysis", "productivity tracker", "time management", "calendar visualization", "activity tracking", "calendar patterns", "productivity analytics", "time spent analysis", "calendar trends", "Google Calendar dashboard", "calendar reporting", "how I spend my time", "calendar history"],
+  description: "Analyze your iCal (.ics) data with powerful insights. Track time spent, discover activity patterns, and visualize your schedule with interactive charts.",
+  keywords: ["calendar stats", "calendar statistics", "iCal stats", "ical analyzer", "iCal trends", "calendar analytics", "iCal statistics", "calendar insights", "calendar data analysis", "calendar dashboard", "time tracking", "time analysis", "calendar metrics", "schedule analysis", "productivity tracker", "time management", "calendar visualization", "activity tracking", "calendar patterns", "productivity analytics", "time spent analysis", "calendar trends", "calendar reporting", "how I spend my time", "calendar history"],
   authors: [{ name: "MyCalendarStats" }],
   metadataBase: new URL('https://mycalendarstats.com'),
   alternates: {
@@ -75,7 +76,7 @@ export default function RootLayout({
       "priceCurrency": "USD"
     },
     "operatingSystem": "Web Browser",
-    "description": "Transform your Google Calendar and iCal data into beautiful insights. Track activities, analyze habits, and discover how you spend your time.",
+    "description": "Transform your iCal calendar data into beautiful insights. Track activities, analyze habits, and discover how you spend your time.",
     "aggregateRating": {
       "@type": "AggregateRating",
       "ratingValue": "4.8",
@@ -99,7 +100,7 @@ export default function RootLayout({
         "name": "How does MyCalendarStats work?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "MyCalendarStats analyzes your calendar events by uploading iCal files or connecting to Google Calendar. All data processing happens locally in your browser - we never store your calendar data on our servers. The app generates statistics, charts, and insights about your activities and time patterns."
+          "text": "MyCalendarStats analyzes your calendar events from uploaded iCal (.ics) files. All data processing happens locally in your browser—we never store your calendar data on our servers. The app generates statistics, charts, and insights about your activities and time patterns."
         }
       },
       {
@@ -107,7 +108,7 @@ export default function RootLayout({
         "name": "Is my calendar data secure?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Yes, your data is completely secure. All processing happens locally in your browser. We request read-only access to your Google Calendar solely to generate statistics, and we do not store any of your calendar data on our servers."
+          "text": "Yes, your data is completely secure. All processing happens locally in your browser. We do not upload your calendar files to our servers."
         }
       },
       {
@@ -123,7 +124,7 @@ export default function RootLayout({
         "name": "Do I need to create an account?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "No account is required. Simply upload your iCal file or connect your Google Calendar to get started. All data is processed locally in your browser."
+          "text": "No account is required. Upload an iCal (.ics) file or use the built-in demo data to get started. All data is processed locally in your browser."
         }
       }
     ]
@@ -147,7 +148,7 @@ export default function RootLayout({
       <body className={`${urbanist.className} antialiased`} style={{ colorScheme: 'light', backgroundColor: 'var(--page-bg)' }} suppressHydrationWarning>
         <FilterProvider>
           <EventsProvider>
-            <div className="min-h-screen bg-[color:var(--page-bg)] flex flex-col">
+            <div className="flex min-h-dvh flex-col bg-[color:var(--page-bg)]">
               {/* Scattered hearts */}
               {/* <div className="heart heart-1">♥</div>
               <div className="heart heart-2">♥</div>
@@ -156,17 +157,20 @@ export default function RootLayout({
               <div className="heart heart-5">♥</div> */}
 
 
-              
+              <AppHeader />
               <Suspense fallback={null}>
                 <GlobalFilterBar />
               </Suspense>
-              <div className="flex-1" style={{ position: 'relative', zIndex: 1 }}>
+              <div
+                className="flex min-h-0 w-full min-w-0 flex-1 flex-col"
+                style={{ position: "relative", zIndex: 1 }}
+              >
                 {children}
               </div>
-              <Footer />
             </div>
           </EventsProvider>
         </FilterProvider>
+        <Analytics />
       </body>
     </html>
   );

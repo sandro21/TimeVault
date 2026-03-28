@@ -66,32 +66,49 @@ export function parseIcsToEventsBrowser(icsText: string, calendarId: string): Ca
   return events;
 }
 
+/**
+ * Parse ICS date/time values.
+ * - Compact form ending in Z (UTC) must use UTC — otherwise wall-clock digits are misread as local (typical ~5h error in US/Eastern).
+ * - No Z / floating time: treat as local wall time (matches most desktop exports for "same timezone" users).
+ * - All-day: YYYYMMDD only.
+ */
 function parseICSDate(dateString: string): Date | null {
   try {
-    // Remove timezone info and colons for parsing
-    // Format: YYYYMMDDTHHMMSS or YYYYMMDD
-    const cleanDate = dateString.replace(/[TZ:]/g, ' ').trim();
-    
-    if (cleanDate.length === 8) {
-      // All-day event: YYYYMMDD
-      const year = parseInt(cleanDate.substring(0, 4));
-      const month = parseInt(cleanDate.substring(4, 6)) - 1;
-      const day = parseInt(cleanDate.substring(6, 8));
+    const raw = dateString.trim();
+    const isUtc = /Z$/i.test(raw);
+
+    // Optional colons: 20250115T14:00:00 or 20250115T140000
+    const compact = raw.replace(/Z$/i, "").replace(/:/g, "");
+
+    // All-day: YYYYMMDD (no time part)
+    if (/^\d{8}$/.test(compact)) {
+      const year = parseInt(compact.substring(0, 4), 10);
+      const month = parseInt(compact.substring(4, 6), 10) - 1;
+      const day = parseInt(compact.substring(6, 8), 10);
       return new Date(year, month, day);
-    } else if (cleanDate.length >= 14) {
-      // Date-time: YYYYMMDD HHMMSS
-      const year = parseInt(cleanDate.substring(0, 4));
-      const month = parseInt(cleanDate.substring(4, 6)) - 1;
-      const day = parseInt(cleanDate.substring(6, 8));
-      const hour = parseInt(cleanDate.substring(9, 11) || '0');
-      const minute = parseInt(cleanDate.substring(11, 13) || '0');
-      const second = parseInt(cleanDate.substring(13, 15) || '0');
-      return new Date(year, month, day, hour, minute, second);
     }
-    
-    return null;
+
+    const m = compact.match(
+      /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/
+    );
+    if (!m) {
+      return null;
+    }
+
+    const year = parseInt(m[1], 10);
+    const month = parseInt(m[2], 10) - 1;
+    const day = parseInt(m[3], 10);
+    const hour = parseInt(m[4], 10);
+    const minute = parseInt(m[5], 10);
+    const second = parseInt(m[6], 10);
+
+    if (isUtc) {
+      return new Date(Date.UTC(year, month, day, hour, minute, second));
+    }
+
+    return new Date(year, month, day, hour, minute, second);
   } catch (e) {
-    console.error('Error parsing date:', dateString, e);
+    console.error("Error parsing date:", dateString, e);
     return null;
   }
 }

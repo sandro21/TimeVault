@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Footer } from "@/components/Footer";
 import { UploadCalendar } from "@/components/UploadCalendar";
 import { CalendarEvent } from "@/lib/calculations/stats";
 
@@ -34,6 +35,7 @@ export default function Home() {
   };
 
   return (
+    <>
     <main className="bg-[color:var(--page-bg)] flex flex-col items-center px-6 pt-12 pb-12 relative overflow-hidden">
       {/* Background SVG */}
       <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
@@ -83,7 +85,7 @@ export default function Home() {
               <img src="/secure.png" alt="Security icon representing data protection" className="w-12 h-12 object-contain opacity-80" />
             </div>
             <p className="text-[16px] font-normal text-[color:var(--text-secondary)] leading-relaxed">
-              Whether you upload an iCal file or connect your Google Calendar, we access your data solely to generate these personalized statistics. All processing happens locally in your browser, we do not store your calendar data on our servers.
+              When you upload an iCal file or try demo data, we use it only to generate these statistics in your browser. We do not store your calendar data on our servers.
             </p>
           </div>
 
@@ -115,6 +117,8 @@ export default function Home() {
         </div>
       </div>
     </main>
+    <Footer />
+    </>
   );
 }
 

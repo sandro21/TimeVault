@@ -11,10 +11,7 @@ interface CalendarSource {
   id: string;
   name: string;
   icsText?: string;
-  source?: 'google';
-  googleCalendarId?: string;
   color?: string;
-  accessRole?: string; // 'owner', 'writer', 'reader', 'freeBusyReader' - for Google calendars
 }
 
 interface ManageFilterModalProps {
@@ -105,19 +102,7 @@ export function ManageFilterModal({ isOpen, onClose }: ManageFilterModalProps) {
       
       let calendarEvents: CalendarEvent[] = [];
       
-      // Check if this is a Google calendar
-      if (calendar.source === 'google' && calendar.googleCalendarId) {
-        // Load events from googleEvents storage
-        const googleEvents = JSON.parse(localStorage.getItem('googleCalendarEvents') || '{}');
-        const storedEvents = googleEvents[calendar.id] || [];
-        // Convert date strings back to Date objects
-        calendarEvents = storedEvents.map((e: any) => ({
-          ...e,
-          start: new Date(e.start),
-          end: new Date(e.end),
-        }));
-      } else if (calendar.icsText) {
-        // Parse ICS file
+      if (calendar.icsText) {
         calendarEvents = parseIcsToEventsBrowser(calendar.icsText, calendar.id);
       }
       
@@ -306,17 +291,8 @@ export function ManageFilterModal({ isOpen, onClose }: ManageFilterModalProps) {
           {/* Main Content Area */}
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             {selectedMenu === "Calendars" && (() => {
-              // Separate calendars into "Your Calendars" (owner/writer or ICS files) and "Others" (read-only)
-              const yourCalendars = calendars.filter(cal => 
-                !cal.source || // ICS files (no source)
-                cal.accessRole === 'owner' || 
-                cal.accessRole === 'writer' ||
-                !cal.accessRole // If accessRole is not set, assume it's owned
-              );
-              const otherCalendars = calendars.filter(cal => 
-                cal.accessRole === 'reader' || 
-                cal.accessRole === 'freeBusyReader'
-              );
+              const yourCalendars = calendars;
+              const otherCalendars: CalendarSource[] = [];
 
               return (
                 <div className="px-8 py-6 space-y-6">

@@ -359,6 +359,11 @@ body {
   padding-bottom: 48px;
 }
 
+/* No fixed time-range pill (Calendar / AI Chat routes) — only app header */
+.page-container.page-container--no-time-filter {
+  padding-top: 88px;
+}
+
 /* Sections Container - for grouping content sections with gap */
 .sections-container {
   display: flex;
@@ -493,6 +498,10 @@ body {
     padding-bottom: 32px !important;
     box-sizing: border-box !important;
     overflow-x: hidden !important;
+  }
+
+  .page-container.page-container--no-time-filter {
+    padding-top: 72px !important;
   }
 
   /* Sections Container - Mobile */
@@ -747,4 +756,292 @@ body {
   }
 }
 
+/*
+ * Calendar route shell: height is a fixed fraction of the viewport *below* the
+ * app header (3.5rem / h-14). Tune --calendar-below-header-pct (e.g. 0.92–0.96).
+ */
+.calendar-route-shell {
+  --calendar-below-header-pct: 0.94;
+  height: calc((100dvh - 3.5rem) * var(--calendar-below-header-pct));
+  max-height: calc((100dvh - 3.5rem) * var(--calendar-below-header-pct));
+}
+
+/* react-big-calendar — matches statistics / card-soft vibe */
+.calendar-google-frame {
+  border-radius: 21px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(var(--card-backdrop-blur));
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.calendar-google-frame .rbc-calendar {
+  width: 100%;
+  min-height: 100%;
+  font-family: inherit;
+  color: var(--text-primary);
+}
+
+/* Scrollable body: month/week/day content can exceed the fixed frame */
+.calendar-google-frame-inner {
+  min-height: 0;
+}
+
+.rbc-google-theme {
+  background: transparent;
+}
+
+/* Toolbar: Today + arrows left, title center, view toggles right */
+.rbc-google-theme .rbc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: transparent;
+  font-size: 14px;
+}
+
+.rbc-google-theme .rbc-toolbar .rbc-btn-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+
+.rbc-google-theme .rbc-toolbar .rbc-btn-group:first-child button {
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: var(--inverse-color);
+  color: var(--text-primary);
+  font-weight: 500;
+  padding: 0.45rem 0.9rem;
+  margin-right: 0.35rem;
+  min-height: 36px;
+  pointer-events: auto;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.rbc-google-theme .rbc-toolbar .rbc-btn-group:first-child button:hover {
+  background: var(--primary-10);
+}
+
+.rbc-google-theme .rbc-toolbar .rbc-btn-group:first-child button:nth-child(2),
+.rbc-google-theme .rbc-toolbar .rbc-btn-group:first-child button:nth-child(3) {
+  padding: 0.35rem 0.65rem;
+  min-width: 36px;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--text-secondary);
+}
+
+.rbc-google-theme .rbc-toolbar-label {
+  flex: 1;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding: 0 0.5rem;
+  min-width: 140px;
+}
+
+.rbc-google-theme .rbc-toolbar .rbc-btn-group:last-child {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
+.rbc-google-theme .rbc-toolbar .rbc-btn-group:last-child button {
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 500;
+  padding: 0.4rem 0.75rem;
+  text-transform: capitalize;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.rbc-google-theme .rbc-toolbar .rbc-btn-group:last-child button:hover {
+  background: var(--primary-10);
+  color: var(--text-primary);
+}
+
+.rbc-google-theme .rbc-toolbar .rbc-btn-group:last-child button.rbc-active {
+  background: var(--primary-15);
+  color: var(--primary);
+  border-color: transparent;
+  font-weight: 600;
+}
+
+/* Month / week / day headers */
+.rbc-google-theme .rbc-header {
+  padding: 0.5rem 0.25rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.rbc-google-theme .rbc-header + .rbc-header {
+  border-left: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.rbc-google-theme .rbc-day-bg + .rbc-day-bg {
+  border-left: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.rbc-google-theme .rbc-month-view,
+.rbc-google-theme .rbc-time-view {
+  border: none;
+}
+
+.rbc-google-theme .rbc-month-row + .rbc-month-row {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.rbc-google-theme .rbc-day-bg {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.rbc-google-theme .rbc-off-range-bg {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.rbc-google-theme .rbc-today {
+  background-color: var(--primary-10);
+}
+
+.rbc-google-theme .rbc-date-cell {
+  text-align: right;
+  padding: 0.35rem 0.5rem;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.rbc-google-theme .rbc-off-range .rbc-date-cell {
+  color: var(--text-secondary);
+  opacity: 0.65;
+}
+
+.rbc-google-theme .rbc-now .rbc-button-link {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* Time grid (week / day) */
+.rbc-google-theme .rbc-time-view {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.rbc-google-theme .rbc-time-header-content {
+  border-left: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.rbc-google-theme .rbc-time-header {
+  flex: 0 0 auto;
+}
+
+/* Prevent oversized all-day strip under day labels */
+.rbc-google-theme .rbc-time-header .rbc-allday-cell {
+  height: auto;
+  min-height: 0;
+}
+
+.rbc-google-theme .rbc-time-header .rbc-row {
+  min-height: 0;
+}
+
+.rbc-google-theme .rbc-time-content {
+  align-items: flex-start;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Keep gutter labels and day columns on the same vertical rhythm (RBC-native sizing) */
+.rbc-google-theme .rbc-time-column .rbc-timeslot-group {
+  min-height: 40px;
+}
+
+.rbc-google-theme .rbc-time-gutter .rbc-timeslot-group {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.rbc-google-theme .rbc-time-slot {
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.rbc-google-theme .rbc-day-slot .rbc-time-slot {
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.rbc-google-theme .rbc-current-time-indicator {
+  background-color: var(--primary);
+  height: 2px;
+}
+
+.rbc-google-theme .rbc-allday-cell {
+  border-left: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.rbc-google-theme .rbc-time-header-gutter {
+  font-size: 10px;
+  color: var(--text-secondary);
+  padding: 0.25rem;
+}
+
+/* Events */
+.rbc-google-theme .rbc-event {
+  padding: 2px 4px;
+  border-radius: 12px;
+}
+
+.rbc-google-theme .rbc-event:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+/* Title-only blocks — hide default time label (times still in grid gutter) */
+.rbc-google-theme .rbc-event-label {
+  display: none !important;
+}
+
+.rbc-google-theme .rbc-event-content {
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.rbc-google-theme .rbc-show-more {
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+  background: transparent;
+}
+
+/* Agenda */
+.rbc-google-theme .rbc-agenda-view {
+  border: none;
+}
+
+.rbc-google-theme .rbc-agenda-view table {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.rbc-google-theme .rbc-agenda-date-cell,
+.rbc-google-theme .rbc-agenda-time-cell {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.rbc-google-theme .rbc-agenda-event-cell {
+  color: var(--text-primary);
+}
 

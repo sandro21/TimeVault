@@ -16,14 +16,16 @@ import {CalendarEvent} from "./stats";
     //Output: from and to dates
     function getDateRangeFromFilter(filter: TimeFilter): {from: Date; to: Date} {
         const now = new Date();
+        now.setHours(23, 59, 59, 999); // End of today
 
         switch (filter.type) {
             case "year" : {
                 const from = new Date(filter.year, 0, 1); //Jan 1
                 const to = new Date(filter.year, 11, 31, 23, 59, 59); //SELECTEDYEAR-11-31 11:59 
+                // Always cap at today to exclude future events
                 return {
                     from, 
-                    to: now.getFullYear() === filter.year? now : to, //if current year, caps at today
+                    to: to > now ? now : to,
                 };
             }
             
@@ -32,12 +34,10 @@ import {CalendarEvent} from "./stats";
                 const from = new Date(filter.year, filter.month - 1, 1); 
                 const lastDay = new Date(filter.year, filter.month, 0).getDate(); 
                 const to = new Date(filter.year, filter.month - 1, lastDay, 23, 59, 59);
+                // Always cap at today to exclude future events
                 return {
                     from,
-                    to:
-                        now.getFullYear() === filter.year && now.getMonth() === filter.month - 1
-                            ? now
-                            : to,
+                    to: to > now ? now : to,
                 };
             }
 
@@ -56,15 +56,17 @@ import {CalendarEvent} from "./stats";
         
                 const weekEnd = new Date(weekStart);
                 weekEnd.setDate(weekStart.getDate() + 6);
-                weekEnd.setHours(23, 59, 59);
+                weekEnd.setHours(23, 59, 59, 999);
         
+                // Always cap at today to exclude future events
                 return {
                 from: weekStart,
-                to: now >= weekStart && now <= weekEnd ? now : weekEnd,
+                to: weekEnd > now ? now : weekEnd,
                 };
             }
 
             case "lifetime": {
+                // Already capped at today
                 return {
                 from: new Date(0), // beginning of time
                 to: now,
@@ -72,9 +74,10 @@ import {CalendarEvent} from "./stats";
             }
         
             case "custom": {
+                // Cap custom range at today to exclude future events
                 return {
                 from: filter.from,
-                to: filter.to,
+                to: filter.to > now ? now : filter.to,
                 };
             }
         }
