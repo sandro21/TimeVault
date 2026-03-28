@@ -8,6 +8,7 @@ import { useEvents } from "@/contexts/EventsContext";
 import { initiateGoogleOAuth, fetchGoogleCalendars } from "@/lib/google-auth";
 import { fetchAllGoogleCalendarEvents } from "@/lib/calculations/parse-google-calendar";
 import { GoogleCalendarSelector } from "@/components/GoogleCalendarSelector";
+import { Upload, Calendar } from "lucide-react";
 
 interface UploadCalendarProps {
   onUploadComplete: (events: CalendarEvent[]) => void;
@@ -220,9 +221,75 @@ export function UploadCalendar({ onUploadComplete }: UploadCalendarProps) {
     setGoogleAccessToken("");
   };
 
+  const generateDemoData = () => {
+    const demoCalendars = [
+      { name: 'Work Calendar', activities: ['Team Meeting', 'Client Call', 'Project Review', 'Lunch Break', 'Code Review', 'Standup', 'Design Session', 'Planning', 'Interview', 'Workshop'] },
+      { name: 'Personal Calendar', activities: ['Gym Workout', 'Grocery Shopping', 'Doctor Appointment', 'Dinner with Friends', 'Movie Night', 'Reading Time', 'Cooking Class', 'Haircut', 'Birthday Party', 'Weekend Trip'] },
+      { name: 'Study Calendar', activities: ['Math Homework', 'History Reading', 'Science Project', 'Essay Writing', 'Group Study', 'Online Course', 'Exam Prep', 'Research', 'Library Visit', 'Tutoring'] },
+    ];
+
+    const newCalendars: any[] = [];
+    const yearStart = new Date(2025, 0, 1); // January 1, 2025
+    const yearEnd = new Date(2025, 11, 31); // December 31, 2025
+    const yearRange = yearEnd.getTime() - yearStart.getTime();
+
+    demoCalendars.forEach((demoCal, calIndex) => {
+      const calendarId = `demo-${Date.now()}-${calIndex}`;
+      let icsText = 'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Demo Calendar//EN\n';
+      
+      // Generate 10 events for this calendar, scattered throughout 2025
+      for (let i = 0; i < 10; i++) {
+        // Spread events evenly across the year with some randomness
+        const randomOffset = (i / 10) * yearRange + (Math.random() * yearRange / 10);
+        const eventDate = new Date(yearStart.getTime() + randomOffset);
+        
+        const startHour = 9 + (i % 8); // Vary start times between 9 AM and 5 PM
+        const duration = 30 + (i % 3) * 30; // 30, 60, or 90 minutes
+        
+        const start = new Date(eventDate);
+        start.setHours(startHour, 0, 0, 0);
+        
+        const end = new Date(start);
+        end.setMinutes(end.getMinutes() + duration);
+        
+        const startStr = start.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        const endStr = end.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        const uid = `${calendarId}-event-${i}`;
+        
+        icsText += `BEGIN:VEVENT\n`;
+        icsText += `UID:${uid}\n`;
+        icsText += `DTSTART:${startStr}\n`;
+        icsText += `DTEND:${endStr}\n`;
+        icsText += `SUMMARY:${demoCal.activities[i]}\n`;
+        icsText += `DESCRIPTION:Demo event\n`;
+        icsText += `END:VEVENT\n`;
+      }
+      
+      icsText += 'END:VCALENDAR';
+      
+      newCalendars.push({
+        id: calendarId,
+        name: demoCal.name,
+        icsText,
+        uploadedAt: new Date().toISOString(),
+      });
+    });
+
+    // Save calendars to localStorage
+    const storedCalendars = JSON.parse(localStorage.getItem('uploadedCalendars') || '[]');
+    storedCalendars.push(...newCalendars);
+    localStorage.setItem('uploadedCalendars', JSON.stringify(storedCalendars));
+
+    // Refresh events context
+    refreshEvents();
+    
+    // Navigate to dashboard
+    router.push('/all-activity');
+  };
+
   return (
     <>
-      <div className="flex flex-col gap-4 w-full max-w-md">
+      <div className="flex flex-col gap-2 items-center w-full">
         <input
           ref={fileInputRef}
           type="file"
@@ -232,26 +299,54 @@ export function UploadCalendar({ onUploadComplete }: UploadCalendarProps) {
           className="hidden"
         />
         
+        {/* Upload iCal Button */}
         <button
           onClick={handleButtonClick}
           disabled={isUploading}
-          className="bg-[color:var(--primary)] text-white px-8 py-4 rounded-full text-body-24 font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center justify-center px-8 py-3 md:py-4 text-[16px] md:text-[20px] font-semibold text-[color:var(--inverse-color)] hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-[400px]"
           type="button"
+          style={{
+            backgroundColor: 'var(--primary)',
+            borderRadius: '9999px',
+          }}
         >
-          {isUploading ? "Uploading..." : "Upload iCal"}
+          {isUploading ? "Uploading..." : "Upload .ICS File"}
         </button>
         
         {error && (
-          <p className="text-[color:var(--color-error)] text-sm text-center">{error}</p>
+          <p className="text-body-18 text-[color:var(--color-error)] text-center py-2">{error}</p>
         )}
         
+        {/* Connect Google Calendar Button */}
+        <div
+          className="relative w-full md:w-[400px]"
+          style={{
+            borderRadius: '9999px',
+            padding: '2px',
+            background: 'linear-gradient(to right, #EA4335, #FBBC05, #34A853, #4285F4)',
+          }}
+        >
+          <button
+            onClick={handleGoogleConnect}
+            disabled={isConnectingGoogle}
+            className="flex items-center justify-center px-8 py-3 md:py-4 text-[16px] md:text-[20px] font-semibold text-[color:var(--text-primary)] hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed w-full"
+            type="button"
+            style={{
+              backgroundColor: 'var(--inverse-color)',
+              borderRadius: '9999px',
+            }}
+          >
+            {isConnectingGoogle ? "Connecting..." : "Connect to Google Calendars"}
+          </button>
+        </div>
+
+        {/* View Demo Statistics Button */}
         <button
-          onClick={handleGoogleConnect}
-          disabled={isConnectingGoogle}
-          className="bg-white text-[color:var(--text-primary)] px-8 py-4 rounded-full text-body-24 font-semibold border-2 border-gray-300 hover:border-[color:var(--primary)] hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={generateDemoData}
+          className="flex items-center justify-center text-[18px] md:text-[20px] font-semibold text-[color:var(--text-secondary)] hover:opacity-80 transition-all"
           type="button"
         >
-          {isConnectingGoogle ? "Connecting..." : "Connect to Google Calendar"}
+          Or click here to try with demo data first
         </button>
       </div>
 

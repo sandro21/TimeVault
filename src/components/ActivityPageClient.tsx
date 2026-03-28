@@ -241,8 +241,8 @@ export function ActivityPageClient({ events, searchString, searchType, timeFilte
             </div>
           </div>
 
-          {/* 3. Activity Scatter Line Chart (spans 2 rows, right column) */}
-          <div className="card-soft row-span-2 flex flex-col px-3 py-3">
+          {/* 3. Activity Scatter Line Chart (spans 2 rows, right column) - Hidden on mobile */}
+          <div className="card-soft row-span-2 hidden md:flex flex-col px-3 py-3 activity-distribution-chart">
             <h3 className="text-card-title mb-4">Activity Distribution</h3>
             <div className="flex-1 min-h-0 w-full">
               <ActivityScatterLineChart events={filteredEvents} />

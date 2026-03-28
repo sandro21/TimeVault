@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Trash2, SlidersHorizontal } from "lucide-react";
 import { useFilter } from "@/contexts/FilterContext";
 // import { ActivitySearchWrapper } from "@/components/ActivitySearchWrapper";
@@ -192,17 +193,18 @@ export function GlobalFilterBar() {
           Manage and Filter
         </button>
           <button
-            className="header-delete-button flex items-center justify-center p-2"
+            className="header-delete-button text-body-24 text-white px-4 py-1 flex items-center gap-2"
             onClick={handleClearData}
           >
-            <Trash2 size={24} className="text-white" />
+            <Trash2 size={20} className="text-white" />
+            <span className="hidden md:inline">Exit</span>
           </button>
         </div>
       </div>
 
-      {/* Time Filter Component - Centered and Fixed */}
+      {/* Desktop Time Filter Component - Centered and Fixed */}
       <div 
-        className="w-full flex justify-center fixed left-0 right-0 z-40 pointer-events-none transition-all duration-200 ease-out"
+        className="hidden md:flex w-full justify-center fixed left-0 right-0 z-40 pointer-events-none transition-all duration-200 ease-out"
         style={{ top: `${topPosition}px` }}
       >
         <div className="flex flex-col items-center justify-center gap-1 pointer-events-auto">
@@ -262,6 +264,72 @@ export function GlobalFilterBar() {
                 </button>
               </>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Time Filter Component - Fixed at Bottom, 90% Width */}
+      <div 
+        className="mobile-filter-bar md:hidden w-full flex justify-center fixed left-0 right-0 bottom-0 z-40 pointer-events-none pb-1"
+      >
+        <div className="mobile-filter-container w-[90%] max-w-[90%] pointer-events-auto">
+          {/* Rounded card container */}
+          <div 
+            className="w-full bg-[color:var(--inverse-color)] rounded-[30px] flex flex-col"
+            style={{
+              boxShadow: '0 0 20px rgba(0, 0, 0, 0.25)',
+            }}
+          >
+            {/* Top row: Year Navigation */}
+            {(selectedFilter === "Month" || selectedFilter === "Year") && (
+              <div className="flex items-center justify-between py-4 px-4 border-b border-[color:var(--text-secondary)]/20">
+                <button
+                  onClick={() => selectedFilter === "Month" ? handleMonthChange(-1) : handleYearChange(-1)}
+                  disabled={!canGoBack()}
+                  className={`text-body-24 cursor-pointer px-2 ${
+                    canGoBack() ? "text-[color:var(--text-primary)]" : "text-[color:var(--text-secondary)] cursor-not-allowed opacity-50"
+                  }`}
+                >
+                  ←
+                </button>
+                <span className="text-body-24 font-bold text-[color:var(--text-primary)] px-4">
+                  {selectedFilter === "Month" 
+                    ? `${monthNames[currentMonth]} ${currentYear}`
+                    : currentYear
+                  }
+                </span>
+                <button
+                  onClick={() => selectedFilter === "Month" ? handleMonthChange(1) : handleYearChange(1)}
+                  disabled={!canGoForward()}
+                  className={`text-body-24 cursor-pointer px-2 ${
+                    canGoForward() ? "text-[color:var(--text-primary)]" : "text-[color:var(--text-secondary)] cursor-not-allowed opacity-50"
+                  }`}
+                >
+                  →
+                </button>
+              </div>
+            )}
+
+            {/* Bottom row: Month, Year, Lifetime */}
+            <div className="flex flex-row">
+              {(["Month", "Year", "LifeTime"] as const).map((filter, index) => (
+                <React.Fragment key={filter}>
+                  <button
+                    onClick={() => setSelectedFilter(filter)}
+                    className={`flex-1 py-4 text-body-24 cursor-pointer ${
+                      selectedFilter === filter 
+                        ? "font-bold text-[color:var(--text-primary)] bg-[color:var(--primary-20)]" 
+                        : "font-normal text-[color:var(--text-primary)]"
+                    }`}
+                  >
+                    {filter}
+                  </button>
+                  {index < 2 && (
+                    <div className="w-px bg-[color:var(--text-secondary)]/20"></div>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
         </div>
       </div>

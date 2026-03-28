@@ -6,9 +6,6 @@ import { CalendarEvent } from "@/lib/calculations/stats";
 import {
   computeGlobalStats,
   computeTopActivities,
-  formatAsDaysHoursMinutes,
-  formatAsHoursMinutes,
-  formatAsMinutes,
   formatAsCompactHoursMinutes,
 } from "@/lib/calculations/stats";
 import { filterEventsByTimeRange } from "@/lib/calculations/filter-events";
@@ -69,9 +66,16 @@ export function DashboardClient({ events }: DashboardClientProps) {
     ...(otherMinutes > 0 ? [{ name: "Other", value: otherMinutes }] : []),
   ];
 
-  const timeDaysHoursMinutes = formatAsDaysHoursMinutes(stats.totalMinutes);
-  const timeHoursMinutes = formatAsHoursMinutes(stats.totalMinutes);
-  const timeMinutes = formatAsMinutes(stats.totalMinutes);
+  // Calculate days for parentheses
+  const totalDays = Math.floor(stats.totalMinutes / (24 * 60));
+  
+  // Calculate total hours and minutes (not remaining after days)
+  const totalHours = Math.floor(stats.totalMinutes / 60);
+  const minutes = stats.totalMinutes % 60;
+  
+  const timeHoursMinutesFormatted = totalHours > 0 
+    ? `${totalHours} Hour${totalHours !== 1 ? "s" : ""}, ${minutes} Minute${minutes !== 1 ? "s" : ""}`
+    : `${minutes} Minute${minutes !== 1 ? "s" : ""}`;
 
   return (
     <>
@@ -111,14 +115,13 @@ export function DashboardClient({ events }: DashboardClientProps) {
             <div className="card-soft col-span-2 flex flex-col items-center justify-center text-center px-8">
               <h3 className="text-card-title mb-2">Time Logged</h3>
               <p className="text-body-24 text-[color:var(--primary)]">
-                {timeDaysHoursMinutes}
+                {timeHoursMinutesFormatted}
               </p>
-              <p className="text-body-24 text-[color:var(--primary)]">
-                {timeHoursMinutes}
-              </p>
-              <p className="text-body-24 text-[color:var(--text-primary)]">
-                {timeMinutes}
-              </p>
+              {totalDays > 0 && (
+                <p className="text-[18px] text-[color:var(--gray)] mt-1">
+                  ({totalDays}+ days)
+                </p>
+              )}
             </div>
           </div>
         </section>
@@ -142,7 +145,7 @@ export function DashboardClient({ events }: DashboardClientProps) {
                       <th className="pb-1 text-left text-body-24 text-[color:var(--gray)] w-[20%] pr-4">Duration</th>
                       <th className="pb-1 text-left text-body-24 text-[color:var(--gray)] w-[15%] pr-4">Count</th>
                       <th className="pb-1 text-left text-body-24 text-[color:var(--gray)] w-[18%] pr-4">Avg</th>
-                      <th className="pb-1 text-left text-body-24 text-[color:var(--gray)] w-[%]">Longest</th>
+                      <th className="pb-1 text-left text-body-24 text-[color:var(--gray)] w-[%] hidden md:table-cell">Longest</th>
                     </tr>
                   </thead>
 
@@ -185,7 +188,7 @@ export function DashboardClient({ events }: DashboardClientProps) {
                           <td className="py-2 text-body-24 text-left" style={rowColorStyle}>
                             {formatAsCompactHoursMinutes(activity.averageSessionMinutes)}
                           </td>
-                          <td className="py-2 text-body-24 text-left" style={rowColorStyle}>
+                          <td className="py-2 text-body-24 text-left hidden md:table-cell" style={rowColorStyle}>
                             {formatAsCompactHoursMinutes(activity.longestSessionMinutes)}
                           </td>
                         </tr>
@@ -197,7 +200,7 @@ export function DashboardClient({ events }: DashboardClientProps) {
             </div>
 
             {/* Pie Chart */}
-            <div className="card-soft flex flex-col">
+            <div className="card-soft flex flex-col pie-chart-container">
               <ActivityPieChart data={pieChartData} />
             </div>
 
@@ -246,8 +249,8 @@ export function DashboardClient({ events }: DashboardClientProps) {
           </div>
         </section>
 
-        {/* Event Timeline */}
-        <section>
+        {/* Event Timeline - Hidden on mobile */}
+        <section className="hidden md:block">
           <h2 className="text-section-header text-[color:var(--text-primary)] mb-4">
             Event Timeline
           </h2>

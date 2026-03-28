@@ -61,13 +61,40 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
     }
   }, [selectedFilter]);
 
+  // On mobile, use simplified intervals: Weekly for Month, Monthly for Year/LifeTime
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 1024);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const mobileInterval: IntervalType = useMemo(() => {
+    if (selectedFilter === "Month") {
+      return "Weekly";
+    } else {
+      return "Monthly";
+    }
+  }, [selectedFilter]);
+
   const [selectedInterval, setSelectedInterval] = useState<IntervalType>(defaultInterval);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Update interval when filter type changes
+  // Update interval when filter type changes or mobile state changes
   useEffect(() => {
-    setSelectedInterval(defaultInterval);
-  }, [defaultInterval]);
+    if (isMobile) {
+      setSelectedInterval(mobileInterval);
+    } else {
+      setSelectedInterval(defaultInterval);
+    }
+  }, [defaultInterval, mobileInterval, isMobile]);
+
+  // Use mobile interval on mobile, selected interval on desktop
+  const effectiveInterval = (isMobile ? mobileInterval : selectedInterval) as IntervalType;
 
   // Group events by interval and calculate total minutes
   const chartData = useMemo(() => {
@@ -123,7 +150,7 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
     // Group by interval
     const eventsByInterval = new Map<string, number>();
     filteredEvents.forEach((event) => {
-      const intervalKey = getIntervalKey(event.start, selectedInterval);
+      const intervalKey = getIntervalKey(event.start, effectiveInterval);
       const currentMinutes = eventsByInterval.get(intervalKey) || 0;
       eventsByInterval.set(intervalKey, currentMinutes + event.durationMinutes);
     });
@@ -138,23 +165,23 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
         ? new Date(today) 
         : new Date(currentYear, 11, 31);
       
-      if (selectedInterval === "Monthly") {
+      if (effectiveInterval === "Monthly") {
         // Generate all 12 months, but cap at current month if it's current year
         const maxMonth = currentYear === today.getFullYear() ? today.getMonth() : 11;
         for (let month = 0; month <= maxMonth; month++) {
           const monthDate = new Date(currentYear, month, 1);
-          const intervalKey = getIntervalKey(monthDate, selectedInterval);
+          const intervalKey = getIntervalKey(monthDate, effectiveInterval);
           allIntervals.push(intervalKey);
         }
-      } else if (selectedInterval === "Weekly") {
+      } else if (effectiveInterval === "Weekly") {
         // Generate all weeks in the year (from Jan 1 to yearEnd)
         const yearStart = new Date(currentYear, 0, 1); // January 1
-        const firstWeekStart = getIntervalStart(yearStart, selectedInterval);
-        const lastWeekStart = getIntervalStart(yearEnd, selectedInterval);
+        const firstWeekStart = getIntervalStart(yearStart, effectiveInterval);
+        const lastWeekStart = getIntervalStart(yearEnd, effectiveInterval);
         
         currentInterval = new Date(firstWeekStart);
         while (currentInterval <= lastWeekStart && currentInterval <= today) {
-          const intervalKey = getIntervalKey(currentInterval, selectedInterval);
+          const intervalKey = getIntervalKey(currentInterval, effectiveInterval);
           // Only include weeks that are within the selected year
           if (currentInterval.getFullYear() === currentYear || 
               (currentInterval.getFullYear() === currentYear - 1 && currentInterval.getMonth() === 11)) {
@@ -164,13 +191,13 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
           }
           currentInterval.setDate(currentInterval.getDate() + 7);
         }
-      } else if (selectedInterval === "Daily") {
+      } else if (effectiveInterval === "Daily") {
         // Generate all days in the year, capped at today
         const yearStart = new Date(currentYear, 0, 1); // January 1
         currentInterval = new Date(yearStart);
         
         while (currentInterval <= yearEnd && currentInterval <= today) {
-          const intervalKey = getIntervalKey(currentInterval, selectedInterval);
+          const intervalKey = getIntervalKey(currentInterval, effectiveInterval);
           if (!allIntervals.includes(intervalKey)) {
             allIntervals.push(intervalKey);
           }
@@ -185,9 +212,9 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
         
         // Determine label based on interval type
         let monthLabel = '';
-        if (selectedInterval === "Monthly") {
+        if (effectiveInterval === "Monthly") {
           monthLabel = formatMonth(month - 1);
-        } else if (selectedInterval === "Weekly") {
+        } else if (effectiveInterval === "Weekly") {
           // Show month label for first week of month
           if (index === 0) {
             monthLabel = formatMonth(month - 1);
@@ -198,7 +225,7 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
               monthLabel = formatMonth(month - 1);
             }
           }
-        } else if (selectedInterval === "Daily") {
+        } else if (effectiveInterval === "Daily") {
           // Show month label for first day of month
           if (day === 1) {
             monthLabel = formatMonth(month - 1);
@@ -233,27 +260,27 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
     const maxDate = new Date(Math.min(today.getTime(), Math.max(...validDates.map(d => d.getTime()))));
     
     // Get the interval start for the first and last dates
-    const firstIntervalStart = getIntervalStart(minDate, selectedInterval);
-    const lastIntervalStart = getIntervalStart(maxDate, selectedInterval);
+    const firstIntervalStart = getIntervalStart(minDate, effectiveInterval);
+    const lastIntervalStart = getIntervalStart(maxDate, effectiveInterval);
     
     // Generate all intervals in the range
     const allIntervals: string[] = [];
     const currentInterval = new Date(firstIntervalStart);
     
     while (currentInterval <= lastIntervalStart) {
-      const intervalKey = getIntervalKey(currentInterval, selectedInterval);
+      const intervalKey = getIntervalKey(currentInterval, effectiveInterval);
       if (!allIntervals.includes(intervalKey)) {
         allIntervals.push(intervalKey);
       }
       
       // Move to next interval
-      if (selectedInterval === "Daily") {
+      if (effectiveInterval === "Daily") {
         currentInterval.setDate(currentInterval.getDate() + 1);
-      } else if (selectedInterval === "Every 4 days") {
+      } else if (effectiveInterval === "Every 4 days") {
         currentInterval.setDate(currentInterval.getDate() + 4);
-      } else if (selectedInterval === "Weekly") {
+      } else if (effectiveInterval === "Weekly") {
         currentInterval.setDate(currentInterval.getDate() + 7);
-      } else if (selectedInterval === "Monthly") {
+      } else if (effectiveInterval === "Monthly") {
         currentInterval.setMonth(currentInterval.getMonth() + 1);
       }
     }
@@ -265,9 +292,9 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
       
       // Determine label based on interval type
       let monthLabel = '';
-      if (selectedInterval === "Monthly") {
+      if (effectiveInterval === "Monthly") {
         monthLabel = formatMonth(month - 1);
-      } else if (selectedInterval === "Weekly") {
+      } else if (effectiveInterval === "Weekly") {
         // Show month label for first week of month
         if (index === 0) {
           monthLabel = formatMonth(month - 1);
@@ -289,7 +316,7 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
     });
 
     return data;
-  }, [events, selectedInterval, selectedFilter, currentYear]);
+  }, [events, effectiveInterval, selectedFilter, currentYear]);
 
   // Calculate number of unique months
   const uniqueMonths = useMemo(() => {
@@ -330,13 +357,13 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
       
       const getTooltipLabel = () => {
         const [year, month, day] = data.date.split('-').map(Number);
-        if (selectedInterval === "Daily") {
+        if (effectiveInterval === "Daily") {
           return `${formatMonth(month - 1)} ${day}, ${year}`;
-        } else if (selectedInterval === "Every 4 days") {
+        } else if (effectiveInterval === "Every 4 days") {
           return `${formatMonth(month - 1)} ${day}, ${year}`;
-        } else if (selectedInterval === "Weekly") {
+        } else if (effectiveInterval === "Weekly") {
           return `Week of ${formatMonth(month - 1)} ${day}, ${year}`;
-        } else if (selectedInterval === "Monthly") {
+        } else if (effectiveInterval === "Monthly") {
           return `${formatMonth(month - 1)} ${year}`;
         }
         return `${formatMonth(month - 1)} ${day}, ${year}`;
@@ -375,47 +402,77 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
 
   return (
     <div className="w-full h-full min-h-[300px] flex flex-col">
-      {/* Title and Interval Selector */}
-      <div className="mb-4 flex items-center justify-between px-6">
-        <h3 className="text-card-title">{title}</h3>
-        <div className="relative">
-          <div 
-            className="bg-white px-3 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer text-[18px] text-[color:var(--text-primary)]"
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          >
-            <span>Interval: {selectedInterval}</span>
-            <ChevronDown size={14} className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+      {/* Title - Show on all screens, filter only on desktop */}
+      <div className="mb-2 md:mb-4 flex items-center justify-between px-3 md:px-6 flex-shrink-0 h-auto">
+        <h3 className="text-card-title text-sm md:text-base">{title}</h3>
+        {/* Interval Selector - Only show on desktop, hidden on mobile */}
+        {!isMobile && (
+          <div className="relative flex-shrink-0 hidden md:block">
+            <div 
+              className="bg-white px-3 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer text-[18px] text-[color:var(--text-primary)] h-auto flex-shrink-0 select-none"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDropdownOpen(!isDropdownOpen);
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDropdownOpen(!isDropdownOpen);
+              }}
+            >
+              <span>Interval: {selectedInterval}</span>
+              <ChevronDown size={14} className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+            </div>
+            
+            {isDropdownOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-10 hidden md:block" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDropdownOpen(false);
+                  }}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDropdownOpen(false);
+                  }}
+                />
+                <div className="absolute top-full mt-2 right-0 bg-white rounded-lg shadow-lg z-20 min-w-[180px] hidden md:block">
+                  {availableIntervals.map((interval) => (
+                    <button
+                      key={interval}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelectedInterval(interval);
+                        setIsDropdownOpen(false);
+                      }}
+                      onTouchStart={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelectedInterval(interval);
+                        setIsDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-1.5 text-[18px] text-[color:var(--text-primary)] hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg select-none ${
+                        selectedInterval === interval ? 'bg-[color:var(--primary-10)]' : ''
+                      }`}
+                    >
+                      {interval}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
-          
-          {isDropdownOpen && (
-            <>
-              <div 
-                className="fixed inset-0 z-10" 
-                onClick={() => setIsDropdownOpen(false)}
-              />
-              <div className="absolute top-full mt-2 right-0 bg-white rounded-lg shadow-lg z-20 min-w-[180px]">
-                {availableIntervals.map((interval) => (
-                  <button
-                    key={interval}
-                    onClick={() => {
-                      setSelectedInterval(interval);
-                      setIsDropdownOpen(false);
-                    }}
-                    className={`w-full text-left px-3 py-1.5 text-[18px] text-[color:var(--text-primary)] hover:bg-gray-100 first:rounded-t-lg last:rounded-b-lg ${
-                      selectedInterval === interval ? 'bg-[color:var(--primary-10)]' : ''
-                    }`}
-                  >
-                    {interval}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+        )}
       </div>
 
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={chartData} margin={{ top: 10, right:10, left: 0, bottom: 0 }} style={{ position: 'relative' }}>
+      <div className="flex-1 min-h-0 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={chartData} margin={{ top: 10, right:10, left: 0, bottom: 40 }} style={{ position: 'relative' }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
           <XAxis
             dataKey="date"
@@ -427,8 +484,11 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
           <YAxis
             stroke="var(--chart-axis)"
             style={{ fontSize: '12px' }}
-            tickFormatter={(value) => formatAsCompactHoursMinutes(value)}
-            width={60}
+            tickFormatter={(value) => {
+              const hours = Math.floor(value / 60);
+              return hours > 0 ? `${hours}h` : '0h';
+            }}
+            width={40}
             tick={{ fontSize: 12 }}
             axisLine={false}
           />
@@ -447,8 +507,9 @@ export function TimeLoggedChart({ events, title = "Time Logged" }: TimeLoggedCha
             dot={false}
             activeDot={{ r: 5, fill: "var(--primary)" }}
           />
-        </AreaChart>
-      </ResponsiveContainer>
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }

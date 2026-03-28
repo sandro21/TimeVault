@@ -752,7 +752,7 @@ export function ManageFilterModal({ isOpen, onClose }: ManageFilterModalProps) {
                   refreshHiddenState();
                   
                   // Show message to user
-                  alert('Filter settings saved! Please refresh the page to see the changes.');
+                  alert('Filter Applied. PLEASE REFRESH THE PAGE!');
                   
                   onClose();
                 }}

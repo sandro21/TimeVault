@@ -1,6 +1,29 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Force light mode - prevent dark mode */
+html {
+  color-scheme: light !important;
+}
+
+body {
+  color-scheme: light !important;
+  background-color: var(--page-bg) !important;
+}
+
+/* Override any dark mode media queries */
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: light !important;
+  }
+  
+  body {
+    color-scheme: light !important;
+    background-color: var(--page-bg) !important;
+    color: var(--text-primary) !important;
+  }
+}
+
 :root {
   /* ============================================
      PAGE & BACKGROUND COLORS
@@ -169,15 +192,67 @@
   padding-right: 24px;
 }
 
+/* Landing page feature cards */
+.landing-feature-card {
+  border-radius: 40px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(var(--card-backdrop-blur));
+  position: relative;
+  overflow: hidden;
+  opacity: .8;
+  border: 2px solid var(--inverse-color);
+}
+
 /* Modal Container - Similar to card but different sizing */
 .modal-container {
   border-radius: var(--card-radius-lg);
-  background: var(--card-bg);
+  background: var(--inverse-color);
   box-shadow: var(--card-shadow);
   backdrop-filter: blur(var(--card-backdrop-blur));
   width: 80vw;
   height: 80vh;
   overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .modal-container {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    height: 90vh !important;
+    border-radius: 30px !important;
+  }
+
+  /* Decrease font sizes in modal on mobile */
+  .modal-container h2 {
+    font-size: 24px !important;
+    line-height: 1.1 !important;
+  }
+
+  .modal-container h3 {
+    font-size: 20px !important;
+    line-height: 1.1 !important;
+  }
+
+  .modal-container .text-body-24 {
+    font-size: 16px !important;
+  }
+
+  .modal-container button {
+    font-size: 16px !important;
+  }
+
+  .modal-container th {
+    font-size: 14px !important;
+  }
+
+  .modal-container td {
+    font-size: 14px !important;
+  }
+
+  .modal-container p {
+    font-size: 14px !important;
+  }
 }
 
 /* Soft primary background blobs
@@ -334,6 +409,342 @@
   background-color: var(--primary);
   cursor: pointer;
   transition: opacity 0.2s;
+}
+
+/* ============================================
+   MOBILE RESPONSIVE STYLES (max-width: 768px)
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Hide hearts on mobile */
+  .heart {
+    display: none !important;
+  }
+
+  /* Landing Page - Mobile */
+  /* Use attribute selector for main element */
+  main[class*="bg-"] {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    padding-top: 24px !important;
+    padding-bottom: 24px !important;
+  }
+
+  /* Landing Page Header - Mobile */
+  main[class*="bg-"] h1 {
+    font-size: 36px !important;
+    line-height: 1.1 !important;
+    margin-bottom: 16px !important;
+  }
+
+  main[class*="bg-"] .text-body-24 {
+    font-size: 18px !important;
+  }
+
+  /* Landing Page Cards Container - Mobile */
+  main[class*="bg-"] > div > div.flex.flex-row {
+    flex-direction: column !important;
+    gap: 16px !important;
+    width: 100% !important;
+  }
+
+  /* Landing Page Feature Cards - Mobile */
+  .landing-feature-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 200px !important;
+    padding: 16px !important;
+  }
+
+  .landing-feature-card h3 {
+    font-size: 24px !important;
+  }
+
+  .landing-feature-card p {
+    font-size: 14px !important;
+  }
+
+  .landing-feature-card img {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  /* Landing Page Buttons - Mobile */
+  /* Target buttons with inline style width: 400px */
+  button[style*="width: '400px'"],
+  div[style*="width: '400px'"] {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  button[style*="width: '400px'"] {
+    font-size: 16px !important;
+    padding: 12px 16px !important;
+  }
+
+  /* Page Container - Mobile */
+  .page-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    padding-top: 80px !important;
+    padding-bottom: 32px !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Sections Container - Mobile */
+  .sections-container {
+    width: 100% !important;
+    min-width: 0 !important;
+    gap: 60px !important;
+  }
+
+  /* Ensure all grid containers respect parent width on mobile */
+  .sections-container > section,
+  .sections-container > div {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .sections-container > section > div[class*="grid"],
+  .sections-container > div[class*="grid"] {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Prevent grid items from overflowing on mobile - but allow charts to show */
+  .sections-container [class*="grid"] > * {
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Chart cards need overflow visible to show full chart */
+  .sections-container [class*="grid"] > .card-soft:has([class*="Chart"]),
+  .sections-container [class*="grid"] > .card-soft:has([class*="ResponsiveContainer"]),
+  .sections-container [class*="grid"] > .card-soft:has(svg) {
+    overflow: visible !important;
+  }
+
+  /* Text size reductions for mobile */
+  .text-section-header {
+    font-size: 28px !important;
+    margin-bottom: 15px !important;
+  }
+
+  .text-card-title {
+    font-size: 20px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .text-card-title-sm {
+    font-size: 18px !important;
+  }
+
+  .text-number-large {
+    font-size: 32px !important;
+    margin-top: 4px !important;
+  }
+
+  .text-number-medium {
+    font-size: 24px !important;
+    margin-top: 4px !important;
+  }
+
+  .text-body-24 {
+    font-size: 16px !important;
+  }
+
+  .text-date {
+    font-size: 14px !important;
+    margin-top: 4px !important;
+  }
+
+  /* Card padding reductions for mobile - height based on content */
+  .card-soft {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+    border-radius: 30px !important;
+    height: auto !important;
+    min-height: auto !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+  }
+
+  /* Convert all grids to flex column on mobile - let heights flow naturally */
+  .sections-container .grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  /* Special case: Grid with Total Activities and Different Activities - 2 column grid with auto rows */
+  .sections-container section:first-child .grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    grid-auto-rows: auto !important;
+    gap: 12px !important;
+  }
+
+  /* Remove grid-specific properties and fixed heights */
+  .sections-container .grid > * {
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    /* Remove row-span and col-span effects */
+    grid-column: unset !important;
+    grid-row: unset !important;
+  }
+
+  /* First section layout on mobile:
+     Row 1: Total Activities (col 1) | Different Activities (col 2)
+     Row 2: Time Logged (span 2 cols)
+     Row 3: Logging Progress (span 2 cols)
+  */
+
+  /* Row 1: Total Activities - column 1 */
+  .sections-container section:first-child .grid > .card-soft:nth-child(1) {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+  }
+
+  /* Row 1: Different Activities - column 2 */
+  .sections-container section:first-child .grid > .card-soft:nth-child(2) {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+  }
+
+  /* Row 2: Time Logged - spans 2 columns (4th child in HTML) */
+  .sections-container section:first-child .grid > .card-soft:nth-child(4) {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    width: 100% !important;
+  }
+
+  /* Row 3: Logging Progress - spans 2 columns (3rd child in HTML) */
+  .sections-container section:first-child .grid > .card-soft:nth-child(3) {
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
+    width: 100% !important;
+  }
+
+  /* Let cards have natural heights based on content */
+  .sections-container .card-soft {
+    min-height: auto !important;
+    height: auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: visible !important;
+  }
+
+  /* Chart cards specifically need to show full content without clipping */
+  .sections-container .card-soft[class*="row-span"],
+  .sections-container .card-soft[class*="flex"][class*="flex-col"][class*="text-left"] {
+    overflow: visible !important;
+    min-height: 350px !important;
+    height: auto !important;
+  }
+
+  /* Chart cards - only apply min-height to cards that actually contain charts */
+  /* Regular stat cards should size to content, no min-height */
+  
+  /* Chart cards need extra bottom padding and overflow visible to show full chart */
+  .sections-container .card-soft[class*="row-span"],
+  .sections-container .card-soft[class*="flex"][class*="flex-col"][class*="text-left"] {
+    overflow: visible !important;
+    min-height: 350px !important;
+    height: auto !important;
+    padding-bottom: 24px !important;
+  }
+
+  /* Top Activities table - allow it to grow to show all items */
+  .sections-container .card-soft:has(table) {
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+  }
+
+  .sections-container .card-soft:has(table) > div.flex-1 {
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    flex: none !important;
+  }
+
+  .sections-container .card-soft:has(table) table {
+    height: auto !important;
+  }
+
+  /* Hide pie chart on mobile */
+  .sections-container .pie-chart-container {
+    display: none !important;
+  }
+
+  /* Chart containers need proper dimensions to render */
+  /* Target the flex-1 container that wraps charts */
+  .sections-container .card-soft .flex-1,
+  .sections-container .card-soft [class*="flex-1"] {
+    min-height: 320px !important;
+    height: 320px !important;
+    flex: none !important;
+    overflow: visible !important;
+  }
+
+  /* Chart wrapper divs - ensure they have explicit height but allow growth */
+  .sections-container .card-soft > div[class*="flex"][class*="flex-col"] > div[class*="flex-1"],
+  .sections-container .card-soft div[class*="w-full"][class*="h-full"],
+  .sections-container .card-soft div[class*="min-h-0"] {
+    min-height: 320px !important;
+    height: 320px !important;
+    overflow: visible !important;
+  }
+
+  /* ResponsiveContainer needs explicit dimensions - this is critical for recharts */
+  .sections-container .card-soft .recharts-responsive-container,
+  .sections-container .card-soft [class*="ResponsiveContainer"],
+  .sections-container .card-soft > div > div[class*="ResponsiveContainer"] {
+    width: 100% !important;
+    height: 320px !important;
+    min-height: 320px !important;
+    overflow: visible !important;
+  }
+
+  /* Chart SVG and canvas elements */
+  .sections-container .card-soft svg,
+  .sections-container .card-soft canvas {
+    width: 100% !important;
+    height: 320px !important;
+    overflow: visible !important;
+  }
+
+  /* Ensure chart cards don't clip content */
+  .sections-container .card-soft[class*="flex"][class*="flex-col"] {
+    overflow: visible !important;
+  }
+
+  /* Ensure parent containers of charts have height */
+  .sections-container .card-soft[class*="flex"][class*="flex-col"] {
+    min-height: auto !important;
+  }
+
+  /* Ensure mobile filter bar container is 90% width */
+  .mobile-filter-container {
+    width: 90% !important;
+    max-width: 90% !important;
+  }
+
+  /* Hide Activity Distribution chart on mobile */
+  .activity-distribution-chart {
+    display: none !important;
+  }
 }
 
 
